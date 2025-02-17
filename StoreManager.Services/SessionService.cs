@@ -13,6 +13,8 @@ namespace StoreManager.Services
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         }
 
+        public void Clear() => _httpContextAccessor.HttpContext.Session.Clear();
+
         public void CustomeSession(IDictionary<string, object> items)
         {
             var context = _httpContextAccessor.HttpContext;

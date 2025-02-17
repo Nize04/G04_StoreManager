@@ -6,5 +6,6 @@ namespace StoreManager.Facade.Interfaces.Services
     public interface ISessionService
     {
         void CustomeSession(IDictionary<string, object> items);
+        void Clear();
     }
 }
