@@ -5,6 +5,7 @@ using StoreManager.DTO;
 using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
+using System.Data;
 
 namespace StoreManager.API.Controllers
 {
@@ -75,6 +76,24 @@ namespace StoreManager.API.Controllers
         }
 
         [HttpPost]
+        [AuthorizeJwt]
+        [Route("LogOut")]
+        public async Task<IActionResult> LogOut()
+        {
+            _sessionService.Clear();
+
+            var jwtToken = HttpContext.Request.Cookies["jwtToken"];
+            if (!string.IsNullOrEmpty(jwtToken))
+            {
+                await _tokenService.RevokeTokenAsync(jwtToken);
+            }
+
+            HttpContext.Response.Cookies.Delete("jwtToken");
+
+            return Ok("LogOut successful");
+        }
+
+        [HttpPost]
         [Route("verify-2fa")]
         public async Task<IActionResult> Verify2FACode(string code)
         {
@@ -112,8 +131,8 @@ namespace StoreManager.API.Controllers
             }
         }
 
-        [AuthorizeJwt("Admin")]
         [HttpGet("GetAccountById")]
+        [AuthorizeJwt("Admin")]
         public async Task<IActionResult> GetAccountById(int accountId)
         {
             var account = await _accountService.GetAccountByIdAsync(accountId);
