@@ -211,7 +211,7 @@ namespace StoreManager.API.Controllers
 
         private string GetSessionEmail()
         {
-            var email = HttpContext.Session.GetString("Email");
+            var email = _sessionService.GetString("Email");
             if (string.IsNullOrWhiteSpace(email))
             {
                 throw new UnauthorizedAccessException("Session expired or email is missing.");
