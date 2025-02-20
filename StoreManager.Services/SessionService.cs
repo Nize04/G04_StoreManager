@@ -29,5 +29,19 @@ namespace StoreManager.Services
                 else context.Session.SetInt32(key, (int)value);
             }
         }
+
+        public void Remove(string itemName)
+        {
+            _httpContextAccessor.HttpContext.Session.Remove(itemName);
+        }
+
+        public byte[] Get(string itemName) => 
+            _httpContextAccessor.HttpContext.Session.Get(itemName);
+
+        public int? GetInt32(string itemName) => 
+            _httpContextAccessor.HttpContext.Session.GetInt32(itemName);
+
+        public string GetString(string itemName) => 
+            _httpContextAccessor.HttpContext.Session.GetString(itemName);
     }
 }

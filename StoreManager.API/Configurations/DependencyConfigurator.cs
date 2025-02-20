@@ -33,11 +33,11 @@ namespace StoreManager.API.Configurations
             builder.Services.AddScoped<ISupplierService, SupplierService>();
             builder.Services.AddScoped<ISupplierTransactionService, SupplierTransactionService>();
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
-            builder.Services.AddScoped<ISessionService, SessionService>();
             builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
             builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            builder.Services.AddSingleton<ISessionService, SessionService>();
             builder.Services.AddSingleton<ILogger<Program>, Logger<Program>>();
             builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
             builder.Services.AddSingleton<ILoginAttemptTracker,LoginAttemptTracker>();

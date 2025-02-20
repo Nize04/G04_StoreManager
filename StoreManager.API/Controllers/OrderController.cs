@@ -5,6 +5,7 @@ using MyAttributes;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
+using System.Runtime.CompilerServices;
 
 namespace StoreManager.API.Controllers
 {
@@ -13,14 +14,19 @@ namespace StoreManager.API.Controllers
     [AuthorizeJwt("Seller")]
     public class OrderController : ControllerBase
     {
-        private IOrderService _orderService;
-        private IMapper _mapper;
-        private ILogger<OrderController> _logger;
-
-        public OrderController(IOrderService orderService, IMapper mapper,ILogger<OrderController> logger)
+        private readonly IOrderService _orderService;
+        private readonly IMapper _mapper;
+        private readonly ISessionService _sessionService;
+        private readonly ILogger<OrderController> _logger;
+        
+        public OrderController(IOrderService orderService, 
+            IMapper mapper,
+            ISessionService sessionService,
+            ILogger<OrderController> logger)
         {
             _orderService = orderService;
             _mapper = mapper;
+            _sessionService = sessionService;
             _logger = logger;
         }
 
@@ -29,7 +35,8 @@ namespace StoreManager.API.Controllers
         {
             try
             {
-                request.Order.EmployeeId = (int)HttpContext.Session.GetInt32("Id")!;
+                request.Order.EmployeeId = (int)_sessionService.GetInt32("Id")!;
+
                 if (request.Order.CustomerId == 0) request.Order.CustomerId = null;
                 _logger.LogInformation("EmployeeId: {EmployeeId} placing order", request.Order.EmployeeId);
                 int orderId = await _orderService.PlaceOrderAsync(_mapper.Map<Order>(request.Order), _mapper.Map<IEnumerable<OrderDetail>>(request.OrderDetails));
