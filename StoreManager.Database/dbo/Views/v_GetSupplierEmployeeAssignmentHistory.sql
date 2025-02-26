@@ -1,3 +1,0 @@
-﻿CREATE VIEW v_GetSupplierEmployeeAssignmentHistory AS
-SELECT *
-FROM SupplierEmployeeAssignmentHistory

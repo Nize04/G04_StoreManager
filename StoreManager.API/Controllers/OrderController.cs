@@ -24,10 +24,10 @@ namespace StoreManager.API.Controllers
             ISessionService sessionService,
             ILogger<OrderController> logger)
         {
-            _orderService = orderService;
-            _mapper = mapper;
-            _sessionService = sessionService;
-            _logger = logger;
+            _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         [HttpPost("PlaceOrder")]

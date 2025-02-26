@@ -5,7 +5,6 @@ using StoreManager.DTO;
 using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
-using System.Data;
 
 namespace StoreManager.API.Controllers
 {
