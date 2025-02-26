@@ -4,6 +4,7 @@ using MyAttributes;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
+using StoreManager.Services;
 
 namespace StoreManager.API.Controllers
 {
@@ -18,9 +19,9 @@ namespace StoreManager.API.Controllers
 
         public SupplierController(ISupplierService supplierService, IMapper mapper, ILogger<SupplierController> logger)
         {
-            _supplierService = supplierService;
-            _mapper = mapper;
-            _logger = logger;
+            _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService)); ;
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         [HttpPost("AddSupplier")]
