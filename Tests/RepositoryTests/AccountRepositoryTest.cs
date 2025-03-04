@@ -30,7 +30,7 @@ namespace StoreManager.Tests.RepositoryTests
             await _unitOfWork.AccountRepository.UpdateAsync(account);
             Account updatedAccount = await _unitOfWork.AccountRepository.GetByIdAsync(account.Id);
 
-            Assert.True(updatedAccount.Email == account.Email);
+            Assert.True(updatedAccount!.Email == account.Email);
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace StoreManager.Tests.RepositoryTests
         [Fact]
         public async Task Insert_NullAccount_ShouldFail()
         {
-            Account account = null;
+            Account? account = null;
 
             await Assert.ThrowsAsync<ArgumentNullException>(() => _unitOfWork.AccountRepository.InsertAsync(account));
         }
@@ -63,7 +63,7 @@ namespace StoreManager.Tests.RepositoryTests
         [Fact]
         public async Task Update_NullAccount_ShouldFail()
         {
-            Account account = null;
+            Account? account = null;
 
             await Assert.ThrowsAsync<ArgumentNullException>(() => _unitOfWork.AccountRepository.UpdateAsync(account));
         }

@@ -37,7 +37,7 @@ namespace StoreManager.Tests.RepositoryTests
             await _unitOfWork.SupplierTransactionDetailRepository.UpdateAsync(supplierTransactionDetail);
             SupplierTransactionDetail updatedSupplierTransactionDetail = await _unitOfWork.SupplierTransactionDetailRepository.GetByIdAsync(supplierTransactionDetail.SupplierTransactionId, supplierTransactionDetail.ProductId);
 
-            Assert.True(updatedSupplierTransactionDetail.Quantity == supplierTransactionDetail.Quantity);
+            Assert.True(updatedSupplierTransactionDetail!.Quantity == supplierTransactionDetail.Quantity);
         }
 
         [Fact]
