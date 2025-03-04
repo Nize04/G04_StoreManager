@@ -1,9 +1,9 @@
 ﻿using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
-namespace StoreManager.Tests
+namespace StoreManager.Tests.RepositoryTests
 {
     [Collection("Database Tests")]
-    public class OrderRepositoryTest : TestBase
+    public class OrderRepositoryTest : RepositoryTestBase
     {
         public OrderRepositoryTest(IUnitOfWork unitOfWork, DatabaseFixture fixture) : base(unitOfWork, fixture)
         {
@@ -40,6 +40,30 @@ namespace StoreManager.Tests
             await _unitOfWork.OrderRepository.DeleteAsync(order.Id);
 
             Assert.Null(await _unitOfWork.OrderRepository.GetByIdAsync(1)!);
+        }
+
+        [Fact]
+        public async Task Insert_NullOrder_ShouldFail()
+        {
+            Order? order = null;
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _unitOfWork.OrderRepository.InsertAsync(order));
+        }
+
+        [Fact]
+        public async Task Update_NullOrder_ShouldFail()
+        {
+            Order? order = null;
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _unitOfWork.OrderRepository.UpdateAsync(order));
+        }
+
+        [Fact]
+        public async Task Delete_InvalidId_ShouldFail()
+        {
+            int invalidOrderId = 999;
+
+            await Assert.ThrowsAsync<ArgumentException>(() => _unitOfWork.OrderRepository.DeleteAsync(invalidOrderId));
         }
     }
 }

@@ -1,0 +1,72 @@
+{
+  "InsertCategories": [
+    "INSERT INTO Categories (Name, IsActive) VALUES('SmartPhone', 1); ",
+    "INSERT INTO Categories (Name, IsActive) VALUES('Leptop', 1); ",
+    "INSERT INTO Categories (Name, IsActive) VALUES('Tablet', 1); ",
+    "INSERT INTO Categories (Name, IsActive) VALUES('SmartWatch', 1); "
+  ],
+  "InsertSuppliers": [
+    "INSERT INTO Suppliers (CompanyName, Country, City) VALUES('Apple', 'USA', 'Cupertino'); ",
+    "INSERT INTO Suppliers (CompanyName, Country, City) VALUES('Microsoft', 'USA', 'Redmond'); ",
+    "INSERT INTO Suppliers (CompanyName, Country, City) VALUES('Samsung', 'South Korea', 'Seoul'); ",
+    "INSERT INTO Suppliers (CompanyName, Country, City) VALUES('Google', 'USA', 'Mountain View'); "
+  ],
+  "InsertProducts": [
+    "INSERT INTO Products (CategoryId, SupplierId, Name, Price) VALUES(1,1,'iPhone 15 Pro', 749.99); ",
+    "INSERT INTO Products (CategoryId, SupplierId, Name, Price) VALUES(2,2,'Surface Laptop 5', 999.99); ",
+    "INSERT INTO Products (CategoryId, SupplierId, Name, Price) VALUES(1,1,'iPhone 14 Pro', 639.99); " ,
+    "INSERT INTO Products (CategoryId, SupplierId, Name, Price) VALUES(3,3,'Galaxy Tab S8', 599.99); "
+  ],
+  "InsertEmployees": [
+    "INSERT INTO Employees (FirstName, LastName) VALUES('Vaja', 'Maisuradze'); ",
+    "INSERT INTO Employees (FirstName, LastName) VALUES('Aravin', 'Maisuradze'); ",
+    "INSERT INTO Employees (FirstName, LastName) VALUES('John', 'Doe'); ",
+    "INSERT INTO Employees (FirstName, LastName) VALUES('Jane', 'Doe'); "
+  ],
+  "InsertCustomers": [
+    "INSERT INTO Customers (FullName, PhoneNumber) VALUES('Shota Rustaveli', '55555555'); ",
+    "INSERT INTO Customers (FullName, PhoneNumber) VALUES('Iakob Gogebashvili', '55555511'); ",
+    "INSERT INTO Customers (FullName, PhoneNumber) VALUES('Nikoloz Baratashvili', '55555522'); ",
+    "INSERT INTO Customers (FullName, PhoneNumber) VALUES('Ilia Chavchavadze', '55555533'); "
+  ],
+  "InsertPriceHistory": [
+    "INSERT INTO PriceHistory (ProductId, Price) VALUES(1, 749.99); ",
+    "INSERT INTO PriceHistory (ProductId, Price) VALUES(2, 999.99); ",
+    "INSERT INTO PriceHistory (ProductId, Price) VALUES(3, 639.99); ",
+    "INSERT INTO PriceHistory (ProductId, Price) VALUES(4, 599.99); "
+  ],
+  "InsertProductsQuantity": [
+    "INSERT INTO ProductsQuantity (Id, Quantity) VALUES(1,17); ",
+    "INSERT INTO ProductsQuantity (Id, Quantity) VALUES(2,12); " ,
+    "INSERT INTO ProductsQuantity (Id, Quantity) VALUES(3,8); " ,
+    "INSERT INTO ProductsQuantity (Id, Quantity) VALUES(4,20); "
+  ],
+  "InsertOrders": [
+    "INSERT INTO Orders (EmployeeId, CustomerId, Description) VALUES(1,2,'Great customer, consider discount'); ",
+    "INSERT INTO Orders (EmployeeId, CustomerId, Description) VALUES(2,1,'Difficult customer, raise price'); ",
+    "INSERT INTO Orders (EmployeeId, CustomerId, Description) VALUES(3,3,'Loyal customer, priority support'); ",
+    "INSERT INTO Orders (EmployeeId, CustomerId, Description) VALUES(4,4,'New customer, first-time discount'); "
+  ],
+  "InsertOrderDetails": [
+    "INSERT INTO OrderDetails (OrderId, ProductId, Quantity, UnitPrice) VALUES(1, 1, 1, 700); ",
+    "INSERT INTO OrderDetails (OrderId, ProductId, Quantity, UnitPrice) VALUES(2, 2, 2, 550); ",
+    "INSERT INTO OrderDetails (OrderId, ProductId, Quantity, UnitPrice) VALUES(3, 3, 1, 600); ",
+    "INSERT INTO OrderDetails (OrderId, ProductId, Quantity, UnitPrice) VALUES(4, 4, 3, 500); "
+  ],
+  "ExecuteProcedures": [
+    "EXEC sp_InsertAccount @Id = 1, @Email = 'test@gmail.com', @Password = 'password123'; ",
+    "EXEC sp_InsertAccount @Id = 2, @Email = 'Blabla2@gmail.com', @Password = 'password123'; ",
+    "EXEC sp_InsertAccount @Id = 3, @Email = 'existed@gmail.com', @Password = 'password123'; "
+  ],
+  "InsertSupplierTransactions": [
+    "INSERT INTO SupplierTransactions (SupplierId, EmployeeId, Description) VALUES(1,1,'Successful transaction'); ",
+    "INSERT INTO SupplierTransactions (SupplierId, EmployeeId, Description) VALUES(1,2,'Large bulk order'); ",
+    "INSERT INTO SupplierTransactions (SupplierId, EmployeeId, Description) VALUES(2,3,'High-value transaction'); ",
+    "INSERT INTO SupplierTransactions (SupplierId, EmployeeId, Description) VALUES(2,4,'Urgent supply order'); "
+  ],
+  "InsertSupplierTransactionDetails": [
+    "INSERT INTO SupplierTransactionDetails (SupplierTransactionId, ProductId, Price, Quantity, ProductionDate) VALUES(1, 1, 300, 100, '2024-03-03'); ",
+    "INSERT INTO SupplierTransactionDetails (SupplierTransactionId, ProductId, Price, Quantity, ProductionDate) VALUES(1, 3, 250, 140, '2024-03-03'); ",
+    "INSERT INTO SupplierTransactionDetails (SupplierTransactionId, ProductId, Price, Quantity, ProductionDate) VALUES(2, 2, 400, 120, '2024-03-05'); "
+  ]
+}

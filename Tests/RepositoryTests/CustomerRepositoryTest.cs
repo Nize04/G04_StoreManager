@@ -1,11 +1,10 @@
-﻿
-using StoreManager.DTO;
+﻿using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
 
-namespace StoreManager.Tests
+namespace StoreManager.Tests.RepositoryTests
 {
     [Collection("Database Tests")]
-    public class CustomerRepositoryTest : TestBase
+    public class CustomerRepositoryTest : RepositoryTestBase
     {
         public CustomerRepositoryTest(IUnitOfWork unitOfWork, DatabaseFixture fixture) : base(unitOfWork, fixture) { }
 
@@ -36,12 +35,35 @@ namespace StoreManager.Tests
         public async Task Delete()
         {
             Customer? customer = await _unitOfWork.CustomerRepository.GetByIdAsync(2);
-
             Assert.NotNull(customer);
 
             await _unitOfWork.CustomerRepository.DeleteAsync(customer.Id);
 
             Assert.Null(await _unitOfWork.CustomerRepository.GetByIdAsync(2));
+        }
+
+        [Fact]
+        public async Task Insert_NullCustomer_ShouldFail()
+        {
+            Customer? customer = null;
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _unitOfWork.CustomerRepository.InsertAsync(customer));
+        }
+
+        [Fact]
+        public async Task Update_NullCustomer_ShouldFail()
+        {
+            Customer? customer = null;
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _unitOfWork.CustomerRepository.UpdateAsync(customer));
+        }
+
+        [Fact]
+        public async Task Delete_InvalidId_ShouldFail()
+        {
+            int invalidCustomerId = 999;
+
+            await Assert.ThrowsAsync<ArgumentException>(() => _unitOfWork.CustomerRepository.DeleteAsync(invalidCustomerId));
         }
     }
 }

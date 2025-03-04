@@ -1,12 +1,7 @@
 ﻿using Dapper;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StoreManager.Repositories
 {
@@ -14,7 +9,9 @@ namespace StoreManager.Repositories
     {
         public SupplierTransactionDetailRepsitory(IDbConnection connection, IDbTransaction? transaction = null) : base(connection, transaction)
         {
+            _manyToManyKeys = new string[] { "SupplierTransactionId", "ProductId" };
         }
+
         public async override Task<object> InsertAsync(SupplierTransactionDetail item)
         {
             string sqlCommand = $"sp_InsertSupplierTransactionDetail";
@@ -22,8 +19,9 @@ namespace StoreManager.Repositories
             await _connection.ExecuteAsync(sqlCommand, parameters, commandType: CommandType.StoredProcedure,
                 transaction: _transaction);
 
-            return -1;
+            return item.SupplierTransactionId;
         }
+
         protected override string[] UnwantedPropertiesForInsert => new string[] { "IsActive" };
     }
 }

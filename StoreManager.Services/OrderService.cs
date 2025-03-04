@@ -16,12 +16,12 @@ namespace StoreManager.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<IEnumerable<Order>> GetOrdersAsync()
+        public async Task DeleteOrderAsync(int orderId)
         {
             await _unitOfWork.OpenConnectionAsync();
             try
             {
-                return await _unitOfWork.OrderRepository.GetAsync(o => o.IsActive == true);
+                await _unitOfWork.OrderRepository.DeleteAsync(orderId);
             }
             finally
             {
@@ -29,7 +29,47 @@ namespace StoreManager.Services
             }
         }
 
-        public async Task<int> PlaceOrderAsync(Order order, IEnumerable<OrderDetail> orderDetails)
+        public async Task<Order?> GetOrderByIdAsync(int id)
+        {
+            await _unitOfWork.OpenConnectionAsync();
+            try
+            {
+                return await _unitOfWork.OrderRepository.GetByIdAsync(id);
+            }
+            finally
+            {
+                await _unitOfWork.CloseConnectionAsync();
+            }
+        }
+
+        public async Task<OrderDetail?> GetOrderDetailAsync(int orderId, int productId)
+        {
+            await _unitOfWork.OpenConnectionAsync();
+            try
+            {
+                return await _unitOfWork.OrderDetailRepository.GetByIdAsync(orderId, productId);
+            }
+            finally
+            {
+                await _unitOfWork.CloseConnectionAsync();
+            }
+        }
+
+        public async Task<IEnumerable<OrderDetail>?> GetOrderDetailsByOrderIdAsync(int orderId)
+        {
+            await _unitOfWork.OpenConnectionAsync();
+            try
+            {
+                return await _unitOfWork.OrderDetailRepository.
+                    GetAsync(od => od.OrderId == orderId && od.IsActive == true);
+            }
+            finally
+            {
+                await _unitOfWork.CloseConnectionAsync();
+            }
+        }
+
+        public async Task<int> PlaceOrderAsyncAsync(Order order, IEnumerable<OrderDetail> orderDetails)
         {
             if (order == null) throw new ArgumentNullException(nameof(order));
             if (orderDetails == null || orderDetails.Count() == 0) throw new InvalidOperationException("orderDetail is empty");
@@ -61,6 +101,20 @@ namespace StoreManager.Services
                 await _unitOfWork.RollBackAsync();
                 _logger.LogError(ex, "Placing Order By EmployeeId {EmployeeId} was unsuccess", order.EmployeeId);
                 throw;
+            }
+            finally
+            {
+                await _unitOfWork.CloseConnectionAsync();
+            }
+        }
+
+        public async Task UpdateOrderAsync(Order order)
+        {
+            await _unitOfWork.OpenConnectionAsync();
+            try
+            {
+                await _unitOfWork.OrderRepository.
+                   UpdateAsync(order);
             }
             finally
             {

@@ -6,7 +6,7 @@ using System.Data;
 
 namespace StoreManager.Repositories
 {
-    internal class TokenRepository : RepositoryBase<Token>,ITokenRepository
+    internal class TokenRepository : RepositoryBase<Token>, ITokenRepository
     {
         public TokenRepository(IDbConnection connection, IDbTransaction? transaction = null) : base(connection, transaction)
         {

@@ -1,11 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Server.HttpSys;
 using MyAttributes;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
-using System.Runtime.CompilerServices;
 
 namespace StoreManager.API.Controllers
 {
@@ -18,8 +16,8 @@ namespace StoreManager.API.Controllers
         private readonly IMapper _mapper;
         private readonly ISessionService _sessionService;
         private readonly ILogger<OrderController> _logger;
-        
-        public OrderController(IOrderService orderService, 
+
+        public OrderController(IOrderService orderService,
             IMapper mapper,
             ISessionService sessionService,
             ILogger<OrderController> logger)
@@ -39,7 +37,7 @@ namespace StoreManager.API.Controllers
 
                 if (request.Order.CustomerId == 0) request.Order.CustomerId = null;
                 _logger.LogInformation("EmployeeId: {EmployeeId} placing order", request.Order.EmployeeId);
-                int orderId = await _orderService.PlaceOrderAsync(_mapper.Map<Order>(request.Order), _mapper.Map<IEnumerable<OrderDetail>>(request.OrderDetails));
+                int orderId = await _orderService.PlaceOrderAsyncAsync(_mapper.Map<Order>(request.Order), _mapper.Map<IEnumerable<OrderDetail>>(request.OrderDetails));
 
                 _logger.LogInformation("OrderId: {OrderId} placed successfully by EmployeeId: {EmployeeId}", orderId, request.Order.EmployeeId);
                 return Ok("Order Placed Succesfully");

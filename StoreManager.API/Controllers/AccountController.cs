@@ -56,7 +56,7 @@ namespace StoreManager.API.Controllers
                         return Ok("Login Successful");
 
                     case LoginStatus.Requires2FA:
-                        _sessionService.CustomeSession(new Dictionary<string, object>() { { "Email", result.Account.Email } });
+                        _sessionService.CustomSession(new Dictionary<string, object>() { { "Email", result.Account.Email } });
                         return BadRequest("Please enter the 2FA code sent to your email.");
 
                     case LoginStatus.LockedOut:
@@ -201,7 +201,7 @@ namespace StoreManager.API.Controllers
                 DeviceInfo = UserRequestHelper.GetDeviceDetails()
             });
 
-            _sessionService.CustomeSession(new Dictionary<string, object>
+            _sessionService.CustomSession(new Dictionary<string, object>
             {
                 { "Id", account.Id },
                 { "Email", account.Email }

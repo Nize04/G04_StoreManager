@@ -7,7 +7,10 @@ namespace StoreManager.Repositories
 {
     internal class OrderDetailRepository : RepositoryBase<OrderDetail>, IOrderDetailRepository
     {
-        public OrderDetailRepository(IDbConnection connection, IDbTransaction? dbTransaction) : base(connection, dbTransaction) { }
+        public OrderDetailRepository(IDbConnection connection, IDbTransaction? dbTransaction) : base(connection, dbTransaction)
+        {
+            _manyToManyKeys = new string[] { "OrderId", "ProductId" };
+        }
 
         public async override Task<object> InsertAsync(OrderDetail item)
         {
@@ -16,7 +19,8 @@ namespace StoreManager.Repositories
             await _connection.ExecuteAsync(sqlCommand, parameters, commandType: CommandType.StoredProcedure,
                 transaction: _transaction);
 
-            return -1;
+            return item.OrderId;
         }
+
     }
 }

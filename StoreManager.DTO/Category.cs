@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 namespace StoreManager.DTO;
 
-public class Category:IDto
+public class Category : IDto
 {
     [Key]
     public int Id { get; set; }

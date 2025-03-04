@@ -5,9 +5,6 @@ namespace StoreManager.Extensions
 {
     public static class StringHelper
     {
-        private const long Multiplier = 5434324234;
-        private const long Offset = 4324234345;
-
         public static string Pluralize(this string word)
         {
             if (word.EndsWith("s") || word.EndsWith("sh") || word.EndsWith("ch") || word.EndsWith("x") || word.EndsWith("z"))
@@ -24,31 +21,6 @@ namespace StoreManager.Extensions
             }
 
             return word + "s";
-        }
-
-        public static string[] GetRoles(this string roles)
-        {
-            if (string.IsNullOrEmpty(roles))
-            {
-                return new string[0];
-            }
-
-            return roles
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(role => role.Trim())
-                .ToArray();
-        }
-
-        public static long EncodeAccountId(this int accountId)
-        {
-            return (accountId * Multiplier) + Offset;
-        }
-
-        // Method to decode the big number back to accountId
-        public static int DecodeAccountId(this long bigNumber)
-        {
-            long decodedId = (bigNumber - Offset) / Multiplier;
-            return (int)decodedId;
         }
 
         public static byte[] HashToken(this string token)

@@ -1,10 +1,10 @@
 ﻿using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
 
-namespace StoreManager.Tests
+namespace StoreManager.Tests.RepositoryTests
 {
     [Collection("Database Tests")]
-    public class EmployeeRepositoryTest : TestBase
+    public class EmployeeRepositoryTest : RepositoryTestBase
     {
         public EmployeeRepositoryTest(IUnitOfWork unitOfWork, DatabaseFixture fixture) : base(unitOfWork, fixture) { }
 
@@ -41,6 +41,30 @@ namespace StoreManager.Tests
             await _unitOfWork.EmployeeRepository.DeleteAsync(employee.Id);
 
             Assert.Null(await _unitOfWork.EmployeeRepository.GetByIdAsync(2));
+        }
+
+        [Fact]
+        public async Task Insert_NullEmployee_ShouldFail()
+        {
+            Employee? employee = null;
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _unitOfWork.EmployeeRepository.InsertAsync(employee));
+        }
+
+        [Fact]
+        public async Task Update_NonExistentEmployee_ShouldFail()
+        {
+            Employee employee = new Employee { Id = 999, FirstName = "Non-Existent", LastName = "Employee" };
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _unitOfWork.EmployeeRepository.UpdateAsync(employee));
+        }
+
+        [Fact]
+        public async Task Delete_NonExistentEmployee_ShouldFail()
+        {
+            int nonExistentEmployeeId = 999;
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _unitOfWork.EmployeeRepository.DeleteAsync(nonExistentEmployeeId));
         }
     }
 }

@@ -12,6 +12,7 @@ namespace StoreManager.Repositories
         protected IDbTransaction? _transaction;
         private readonly string _pluralTypeName;
         private readonly string _typeName;
+        protected string[]? _manyToManyKeys;
         protected readonly string[] _unwantedPropertiesForInsert;
         protected readonly string[] _unwantedPropertiesForUpdate;
 
@@ -21,18 +22,45 @@ namespace StoreManager.Repositories
             _typeName = typeof(T).Name;
             _transaction = transaction;
             _pluralTypeName = _typeName.Pluralize();
+            _manyToManyKeys = null;
             _unwantedPropertiesForInsert = UnwantedPropertiesForInsert;
             _unwantedPropertiesForUpdate = UnwantedPropertiesForUpdate;
         }
 
-        public async virtual Task DeleteAsync(object id) =>
-            await _connection.ExecuteAsync($"sp_Delete{_typeName}", new { Id = id }, commandType: CommandType.StoredProcedure,transaction:_transaction);
-
         public async Task<IEnumerable<T>> GetAsync(Expression<Func<T, bool>> predicate) =>
             await _connection.QueryAsync<T>($"SELECT * FROM {_pluralTypeName} WHERE {predicate.GetWhereDbQuery()}");
 
-        public async virtual Task<T?> GetByIdAsync(object id) =>
-            await _connection.QueryFirstOrDefaultAsync<T>($"sp_Get{_typeName}", new { Id = id }, commandType: CommandType.StoredProcedure, transaction: _transaction);
+        public async Task<T?> GetByIdAsync(params object[] keys)
+        {
+            var keyParameters = new DynamicParameters();
+
+            if (_manyToManyKeys != null && _manyToManyKeys.Length == keys.Length)
+            {
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    keyParameters.Add($"@{_manyToManyKeys[i]}", keys[i]);
+                }
+            }
+            else keyParameters.Add("Id", keys[0]);
+
+            return await _connection.QueryFirstOrDefaultAsync<T>($"sp_Get{_typeName}", keyParameters, commandType: CommandType.StoredProcedure, transaction: _transaction);
+        }
+
+        public async Task DeleteAsync(params object[] keys)
+        {
+            var keyParameters = new DynamicParameters();
+
+            if (_manyToManyKeys != null && _manyToManyKeys.Length == keys.Length)
+            {
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    keyParameters.Add($"@{_manyToManyKeys[i]}", keys[i]);
+                }
+            }
+            else keyParameters.Add("Id", keys[0]);
+
+            await _connection.ExecuteAsync($"sp_Delete{_typeName}", keyParameters, commandType: CommandType.StoredProcedure, transaction: _transaction);
+        }
 
         public async virtual Task<object> InsertAsync(T item)
         {
