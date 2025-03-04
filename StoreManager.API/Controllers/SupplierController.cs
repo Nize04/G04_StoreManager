@@ -4,7 +4,6 @@ using MyAttributes;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
-using StoreManager.Services;
 
 namespace StoreManager.API.Controllers
 {

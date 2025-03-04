@@ -8,8 +8,11 @@ namespace StoreManager.Repositories
     {
         public SupplierTransactionRepository(IDbConnection connection, IDbTransaction? transaction = null) : base(connection, transaction)
         {
+
         }
 
         protected override string[] UnwantedPropertiesForInsert => new string[] { "IsActive", "TransactionTime" };
+
+        protected override string[] UnwantedPropertiesForUpdate => new string[] { "IsActive", "TransactionTime" };
     }
 }

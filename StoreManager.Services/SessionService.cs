@@ -15,7 +15,7 @@ namespace StoreManager.Services
 
         public void Clear() => _httpContextAccessor.HttpContext.Session.Clear();
 
-        public void CustomeSession(IDictionary<string, object> items)
+        public void CustomSession(IDictionary<string, object> items)
         {
             var context = _httpContextAccessor.HttpContext;
             for (int i = 0; i < items.Count; i++)
@@ -35,13 +35,13 @@ namespace StoreManager.Services
             _httpContextAccessor.HttpContext.Session.Remove(itemName);
         }
 
-        public byte[] Get(string itemName) => 
+        public byte[] Get(string itemName) =>
             _httpContextAccessor.HttpContext.Session.Get(itemName);
 
-        public int? GetInt32(string itemName) => 
+        public int? GetInt32(string itemName) =>
             _httpContextAccessor.HttpContext.Session.GetInt32(itemName);
 
-        public string GetString(string itemName) => 
+        public string GetString(string itemName) =>
             _httpContextAccessor.HttpContext.Session.GetString(itemName);
     }
 }

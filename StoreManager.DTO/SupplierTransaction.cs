@@ -13,6 +13,9 @@ public class SupplierTransaction : IDto
     [Required(ErrorMessage = "Employee ID is required.")]
     public int EmployeeId { get; set; }
 
+    [StringLength(500, ErrorMessage = "Description cannot be longer than 500 characters.")]
+    public string? Description { get; set; }
+
     [Required(ErrorMessage = "Transaction time is required.")]
     public DateTime TransactionTime { get; set; }
 

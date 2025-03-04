@@ -45,6 +45,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<StoreManager.API.Middleware.ExceptionHandlingMiddleware>();
+
 app.UseSession();
 
 app.UseRouting();

@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyAttributes;
 using StoreManager.DTO;
@@ -39,7 +38,7 @@ namespace StoreManager.API.Controllers
             try
             {
                 _logger.LogInformation("Assigning Role ID {RoleId} to Account ID {AccountId}.", roleId, accountId);
-                await _roleService.AssignRoleToAccountAsync(new AccountRole() { AccountId = accountId, RoleId = roleId} );
+                await _roleService.AssignRoleToAccountAsync(new AccountRole() { AccountId = accountId, RoleId = roleId });
                 _logger.LogInformation("Successfully assigned Role ID {RoleId} to Account ID {AccountId}.", roleId, accountId);
 
                 return Ok($"Role ID {roleId} assigned to Account ID {accountId} successfully.");
