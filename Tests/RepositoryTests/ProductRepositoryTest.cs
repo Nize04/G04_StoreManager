@@ -27,9 +27,9 @@ namespace StoreManager.Tests.RepositoryTests
             product.Name = "updated" + product.Name;
             await _unitOfWork.ProductRepository.UpdateAsync(product);
 
-            Product? updatedProduct = await _unitOfWork.ProductRepository.GetByIdAsync(product.Id);
+            Product updatedProduct = await _unitOfWork.ProductRepository.GetByIdAsync(product.Id);
 
-            Assert.True(updatedProduct.Name == product.Name);
+            Assert.True(updatedProduct!.Name == product.Name);
         }
 
         [Fact]

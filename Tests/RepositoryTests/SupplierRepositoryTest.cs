@@ -30,7 +30,7 @@ namespace StoreManager.Tests.RepositoryTests
             await _unitOfWork.SupplierRepository.UpdateAsync(supplier);
             Supplier updatedSupplier = await _unitOfWork.SupplierRepository.GetByIdAsync(supplier.Id);
 
-            Assert.True(updatedSupplier.CompanyName == supplier.CompanyName);
+            Assert.True(updatedSupplier!.CompanyName == supplier.CompanyName);
         }
 
         [Fact]
