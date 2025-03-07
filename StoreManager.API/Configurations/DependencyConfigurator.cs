@@ -14,21 +14,26 @@ public static class DependencyConfigurator
 {
     public static void ConfigureDependency(this WebApplicationBuilder builder, ConfigurationManager configuration)
     {
-
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         configuration.GetConnectionString("ConnectionString");
         builder.Services.AddScoped<IDbConnection>(provider => new SqlConnection(connectionString));
         builder.Services.Configure<AzureStorageSettings>(builder.Configuration.GetSection("AzureStorageSettings"));
 
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-        builder.Services.AddScoped<IAccountService, AccountService>();
+        builder.Services.AddScoped<IAccountCommandService, AccountCommandService>();
+        builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
         builder.Services.AddScoped<ITokenService, TokenService>();
-        builder.Services.AddScoped<ICategoryService, CategoryService>();
+        builder.Services.AddScoped<ICategoryCommandService, CategoryCommandService>();
+        builder.Services.AddScoped<ICategoryQueryService, CategoryQueryService>();
         builder.Services.AddScoped<IAccountImageService, AccountImageService>();
-        builder.Services.AddScoped<IOrderService, OrderService>();
-        builder.Services.AddScoped<ISupplierService, SupplierService>();
-        builder.Services.AddScoped<ISupplierTransactionService, SupplierTransactionService>();
-        builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+        builder.Services.AddScoped<IOrderCommandService, OrderCommandService>();
+        builder.Services.AddScoped<IOrderQueryService, OrderQueryService>();
+        builder.Services.AddScoped<ISupplierCommandService, SupplierCommandService>();
+        builder.Services.AddScoped<ISupplierQueryService, SupplierQueryService>();
+        builder.Services.AddScoped<ISupplierTransactionCommandService, SupplierTransactionCommandService>();
+        builder.Services.AddScoped<ISupplierTransactionQueryService, SupplierTransactionQueryService>();
+        builder.Services.AddScoped<IEmployeeCommandService, EmployeeCommandService>();
+        builder.Services.AddScoped<IEmployeeQueryService, EmployeeQueryService>();
         builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
         builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
         builder.Services.AddScoped<IRoleService, RoleService>();

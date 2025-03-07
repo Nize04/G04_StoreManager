@@ -11,18 +11,21 @@ namespace StoreManager.API.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IAccountService _accountService;
+        private readonly IAccountCommandService _accountCommandService;
+        private readonly IAccountQueryService _accountQueryService;
         private readonly ITokenService _tokenService;
         private readonly ISessionService _sessionService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
-            IAccountService accountService,
+            IAccountCommandService accountCommandService,
+            IAccountQueryService accountQueryService,
             ITokenService tokenService,
             ISessionService sessionService,
             ILogger<AuthController> logger)
         {
-            _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
+            _accountCommandService = accountCommandService ?? throw new ArgumentNullException(nameof(accountCommandService));
+            _accountQueryService = accountQueryService ?? throw new ArgumentNullException(nameof(accountQueryService));
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
             _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -42,7 +45,7 @@ namespace StoreManager.API.Controllers
 
             try
             {
-                var result = await _accountService.ProcessLoginAsync(model.Email, model.Password, clientKey);
+                var result = await _accountCommandService.ProcessLoginAsync(model.Email, model.Password, clientKey);
 
                 switch (result.Status)
                 {
@@ -81,7 +84,7 @@ namespace StoreManager.API.Controllers
             try
             {
                 string email = _sessionService.GetString("Email");
-                var result = _accountService.Verify2FACode(email, code);
+                var result = _accountCommandService.Verify2FACode(email, code);
 
                 switch (result)
                 {
@@ -92,7 +95,7 @@ namespace StoreManager.API.Controllers
                         _logger.LogWarning("2FA verification failed for Email: {Email}", email);
                         return Unauthorized("Invalid 2FA code.");
                     case TwoFAResult.Success:
-                        var account = await _accountService.GetAccountByEmailAsync(email);
+                        var account = await _accountQueryService.GetAccountByEmailAsync(email);
                         await Authorize(account!);
                         return Ok("2FA verification successful.");
                     default:

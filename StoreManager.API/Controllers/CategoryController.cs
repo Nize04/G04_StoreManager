@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MyAttributes;
 using StoreManager.DTO;
-using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
 
 namespace StoreManager.API.Controllers
@@ -12,16 +11,19 @@ namespace StoreManager.API.Controllers
     [AuthorizeJwt("Manager")]
     public class CategoryController : ControllerBase
     {
-        private readonly ICategoryService _categoryService;
+        private readonly ICategoryCommandService _categoryCommandService;
+        private readonly ICategoryQueryService _categoryQueryService;
         private readonly ILogger<CategoryController> _logger;
         private readonly IMapper _mapper;
 
         public CategoryController(
-            ICategoryService categoryService,
+            ICategoryCommandService categoryCommandService,
+            ICategoryQueryService categoryQueryService,
             ILogger<CategoryController> logger,
             IMapper mapper)
         {
-            _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+            _categoryCommandService = categoryCommandService ?? throw new ArgumentNullException(nameof(categoryCommandService));
+            _categoryQueryService = categoryQueryService ?? throw new ArgumentNullException(nameof(categoryQueryService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
@@ -38,7 +40,7 @@ namespace StoreManager.API.Controllers
             try
             {
                 _logger.LogInformation("Attempting to retrieve category with name: {CategoryName}", categoryName);
-                var category = await _categoryService.GetByNameAsync(categoryName);
+                var category = await _categoryQueryService.GetByNameAsync(categoryName);
 
                 if (category == null)
                 {
@@ -70,7 +72,7 @@ namespace StoreManager.API.Controllers
                 var category = _mapper.Map<Category>(categoryModel);
 
                 _logger.LogInformation("Adding a new category with name: {CategoryName}", category.Name);
-                await _categoryService.AddCategoryAsync(category);
+                await _categoryCommandService.AddCategoryAsync(category);
 
                 _logger.LogInformation("Successfully added a new category: {CategoryName}", category.Name);
                 return CreatedAtAction(nameof(GetCategoryByName), new { categoryName = category.Name }, "Category added successfully.");

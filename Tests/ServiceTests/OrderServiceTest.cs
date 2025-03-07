@@ -6,11 +6,16 @@ namespace StoreManager.Tests.ServiceTests
     [Collection("Database Tests")]
     public class OrderServiceTest : TestBase
     {
-        private IOrderService _orderService;
+        private IOrderCommandService _orderCommandService;
+        private IOrderQueryService _orderQueryService;
 
-        public OrderServiceTest(DatabaseFixture fixture, IOrderService orderService) : base(fixture)
+        public OrderServiceTest(DatabaseFixture fixture,
+            IOrderCommandService orderCommandService,
+            IOrderQueryService orderQueryService
+            ) : base(fixture)
         {
-            _orderService = orderService;
+            _orderCommandService = orderCommandService;
+            _orderQueryService = orderQueryService;
         }
 
         [Fact]
@@ -20,8 +25,8 @@ namespace StoreManager.Tests.ServiceTests
             OrderDetail[] orderDetails = new[] { new OrderDetail() { ProductId = 1, Quantity = 10, UnitPrice = (decimal)749.99 },
             new OrderDetail() { ProductId = 2, Quantity = 11, UnitPrice = (decimal)999.99}};
 
-            int orderId = await _orderService.PlaceOrderAsyncAsync(order, orderDetails);
-            Order? insertedOrder = await _orderService.GetOrderByIdAsync(orderId);
+            int orderId = await _orderCommandService.PlaceOrderAsync(order, orderDetails);
+            Order? insertedOrder = await _orderQueryService.GetOrderByIdAsync(orderId);
 
             Assert.NotNull(insertedOrder);
 
@@ -29,7 +34,7 @@ namespace StoreManager.Tests.ServiceTests
 
             foreach (OrderDetail orderDetail in orderDetails)
             {
-                OrderDetail? insertedOrderDetail = await _orderService.GetOrderDetailAsync(orderDetail.OrderId, orderDetail.ProductId);
+                OrderDetail? insertedOrderDetail = await _orderQueryService.GetOrderDetailAsync(orderDetail.OrderId, orderDetail.ProductId);
                 Assert.NotNull(insertedOrderDetail);
                 Assert.Equal(insertedOrderDetail.UnitPrice, orderDetail.UnitPrice);
             }
@@ -38,14 +43,14 @@ namespace StoreManager.Tests.ServiceTests
         [Fact]
         public async Task Update()
         {
-            Order? order = await _orderService.GetOrderByIdAsync(1);
+            Order? order = await _orderQueryService.GetOrderByIdAsync(1);
 
             Assert.NotNull(order);
             order.Description = "Updated Description";
 
-            await _orderService.UpdateOrderAsync(order);
+            await _orderCommandService.UpdateOrderAsync(order);
 
-            Order updatedOrder = await _orderService.GetOrderByIdAsync(order.Id);
+            Order updatedOrder = await _orderQueryService.GetOrderByIdAsync(order.Id);
 
             Assert.True(order.Description == updatedOrder!.Description);
         }
@@ -53,15 +58,15 @@ namespace StoreManager.Tests.ServiceTests
         [Fact]
         public async Task Delete()
         {
-            Order? order = await _orderService.GetOrderByIdAsync(2);
+            Order? order = await _orderQueryService.GetOrderByIdAsync(2);
 
             Assert.NotNull(order);
 
-            await _orderService.DeleteOrderAsync(order.Id);
+            await _orderCommandService.DeleteOrderAsync(order.Id);
 
-            Assert.Null(await _orderService.GetOrderByIdAsync(order.Id));
+            Assert.Null(await _orderQueryService.GetOrderByIdAsync(order.Id));
 
-            Assert.Empty(await _orderService.GetOrderDetailsByOrderIdAsync(order.Id));
+            Assert.Empty(await _orderQueryService.GetOrderDetailsByOrderIdAsync(order.Id));
         }
 
         [Fact]
@@ -74,7 +79,7 @@ namespace StoreManager.Tests.ServiceTests
                 new OrderDetail() { ProductId = 2, Quantity = -5, UnitPrice = 999.99m }
             };
 
-            await Assert.ThrowsAsync<ArgumentException>(() => _orderService.PlaceOrderAsyncAsync(order, orderDetails));
+            await Assert.ThrowsAsync<ArgumentException>(() => _orderCommandService.PlaceOrderAsync(order, orderDetails));
         }
 
         [Fact]
@@ -83,7 +88,7 @@ namespace StoreManager.Tests.ServiceTests
             Order order = new Order() { CustomerId = 1, EmployeeId = 2, Description = "We love Rich Customers" };
             OrderDetail[] orderDetails = Array.Empty<OrderDetail>();
 
-            await Assert.ThrowsAsync<ArgumentException>(() => _orderService.PlaceOrderAsyncAsync(order, orderDetails));
+            await Assert.ThrowsAsync<ArgumentException>(() => _orderCommandService.PlaceOrderAsync(order, orderDetails));
         }
     }
 }

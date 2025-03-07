@@ -13,19 +13,19 @@ namespace StoreManager.API.Controllers
     [AuthorizeJwt("Seller")]
     public class OrderController : ControllerBase
     {
-        private readonly IOrderService _orderService;
+        private readonly IOrderCommandService _orderCommandService;
+        private readonly IOrderQueryService _orderQueryService;
         private readonly IMapper _mapper;
-        private readonly ISessionService _sessionService;
         private readonly ILogger<OrderController> _logger;
 
-        public OrderController(IOrderService orderService,
+        public OrderController(IOrderCommandService orderCommandService,
+            IOrderQueryService orderQueryService,
             IMapper mapper,
-            ISessionService sessionService,
             ILogger<OrderController> logger)
         {
-            _orderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
+            _orderCommandService = orderCommandService ?? throw new ArgumentNullException(nameof(orderCommandService));
+            _orderQueryService = orderQueryService ?? throw new ArgumentNullException(nameof(orderQueryService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -38,7 +38,7 @@ namespace StoreManager.API.Controllers
 
                 if (request.Order.CustomerId == 0) request.Order.CustomerId = null;
                 _logger.LogInformation("EmployeeId: {EmployeeId} placing order", request.Order.EmployeeId);
-                int orderId = await _orderService.PlaceOrderAsyncAsync(_mapper.Map<Order>(request.Order), _mapper.Map<IEnumerable<OrderDetail>>(request.OrderDetails));
+                int orderId = await _orderCommandService.PlaceOrderAsync(_mapper.Map<Order>(request.Order), _mapper.Map<IEnumerable<OrderDetail>>(request.OrderDetails));
 
                 _logger.LogInformation("OrderId: {OrderId} placed successfully by EmployeeId: {EmployeeId}", orderId, request.Order.EmployeeId);
                 return Ok("Order Placed Succesfully");

@@ -28,6 +28,12 @@ namespace StoreManager.Repositories
             return parameters.Get<bool>("@IsAuthenticate");
         }
 
+        public async Task<Account?> GetByEmailAsync(string email)
+        {
+            IEnumerable<Account> accounts = await GetAsync(a => a.Email == email && a.IsActive == true);
+
+            return accounts.FirstOrDefault();
+        }
         protected override string[] UnwantedPropertiesForInsert => new[] { "CreateDate", "UpdateDate", "IsActive", "Requires2FA" ,"Salt"};
         protected override string[] UnwantedPropertiesForUpdate => new[] { "CreateDate", "UpdateDate", "IsActive", "Salt" };
     }

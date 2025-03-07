@@ -12,13 +12,19 @@ namespace StoreManager.API.Controllers
     [AuthorizeJwt("Manager")]
     public class SupplierController : ControllerBase
     {
-        private readonly ISupplierService _supplierService;
+        private readonly ISupplierCommandService _supplierCommandService;
+        private readonly ISupplierQueryService _supplierQueryService;
         private readonly IMapper _mapper;
         private readonly ILogger<SupplierController> _logger;
 
-        public SupplierController(ISupplierService supplierService, IMapper mapper, ILogger<SupplierController> logger)
+        public SupplierController(
+            ISupplierCommandService supplierCommanService, 
+            ISupplierQueryService supplierQueryService,
+            IMapper mapper, 
+            ILogger<SupplierController> logger)
         {
-            _supplierService = supplierService ?? throw new ArgumentNullException(nameof(supplierService)); ;
+            _supplierCommandService = supplierCommanService ?? throw new ArgumentNullException(nameof(supplierCommanService));
+            _supplierQueryService = supplierQueryService ?? throw new ArgumentNullException(nameof(supplierQueryService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -31,7 +37,7 @@ namespace StoreManager.API.Controllers
             try
             {
                 var supplier = _mapper.Map<Supplier>(supplierModel);
-                await _supplierService.AddSupplierAsync(supplier);
+                await _supplierCommandService.AddSupplierAsync(supplier);
 
                 _logger.LogInformation("Supplier added successfully.");
                 return Ok("Supplier Added Successfully");
