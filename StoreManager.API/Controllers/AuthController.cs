@@ -165,12 +165,6 @@ namespace StoreManager.API.Controllers
                 RefreshTokenExpiresAt = tokenResponse.RefreshTokenExpiresAt,
                 DeviceInfo = UserRequestHelper.GetDeviceDetails()
             });
-
-            _sessionService.CustomSession(new Dictionary<string, object>
-            {
-                { "Id", account.Id },
-                { "Email", account.Email }
-            });
         }
     }
 }
