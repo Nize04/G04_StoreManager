@@ -6,5 +6,6 @@ namespace StoreManager.Facade.Interfaces.Repositories
     {
         Task RevokeTokenAsync(string tokenString);
         Task<bool> IsTokenValidAsync(string tokenString);
+        Task<Token?> GetByRefreshToken(string refreshToken);
     }
 }

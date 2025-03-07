@@ -4,6 +4,7 @@ using MyAttributes;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
+using System.Security.Claims;
 
 namespace StoreManager.API.Controllers
 {
@@ -39,7 +40,7 @@ namespace StoreManager.API.Controllers
                 SupplierTransaction supplierTransaction = _mapper.Map<SupplierTransaction>(
                     makeSupplierTransactionRequest.InputSupplierTransactionModel);
 
-                supplierTransaction.EmployeeId = (int)_sessionService.GetInt32("Id")!;
+                supplierTransaction.EmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
                 _logger.LogInformation("Creating supplier transaction by EmployeeId: {EmployeeId}", supplierTransaction.EmployeeId);
 

@@ -18,7 +18,7 @@ namespace StoreManager.DTO
         [Url(ErrorMessage = "Invalid URL format.")]
         public string BlobUrl { get; set; } = null!;
 
-        public DateTime UploadedTime { get; set; }
+        public DateTime UploadedDate { get; set; }
 
         public bool IsActive { get; set; }
     }

@@ -18,10 +18,17 @@ namespace StoreManager.Services
 
         public async Task DeleteOrderAsync(int orderId)
         {
+            _logger.LogInformation("Starting DeleteOrderAsync for OrderId {OrderId}", orderId);
             await _unitOfWork.OpenConnectionAsync();
             try
             {
                 await _unitOfWork.OrderRepository.DeleteAsync(orderId);
+                _logger.LogInformation("Order with OrderId {OrderId} deleted successfully", orderId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting Order with OrderId {OrderId}", orderId);
+                throw;
             }
             finally
             {
@@ -31,10 +38,18 @@ namespace StoreManager.Services
 
         public async Task<Order?> GetOrderByIdAsync(int id)
         {
+            _logger.LogInformation("Starting GetOrderByIdAsync for OrderId {OrderId}", id);
             await _unitOfWork.OpenConnectionAsync();
             try
             {
-                return await _unitOfWork.OrderRepository.GetByIdAsync(id);
+                var order = await _unitOfWork.OrderRepository.GetByIdAsync(id);
+                _logger.LogInformation("Order with OrderId {OrderId} retrieved successfully", id);
+                return order;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving Order with OrderId {OrderId}", id);
+                throw;
             }
             finally
             {
@@ -44,10 +59,18 @@ namespace StoreManager.Services
 
         public async Task<OrderDetail?> GetOrderDetailAsync(int orderId, int productId)
         {
+            _logger.LogInformation("Starting GetOrderDetailAsync for OrderId {OrderId} and ProductId {ProductId}", orderId, productId);
             await _unitOfWork.OpenConnectionAsync();
             try
             {
-                return await _unitOfWork.OrderDetailRepository.GetByIdAsync(orderId, productId);
+                var orderDetail = await _unitOfWork.OrderDetailRepository.GetByIdAsync(orderId, productId);
+                _logger.LogInformation("OrderDetail for OrderId {OrderId} and ProductId {ProductId} retrieved successfully", orderId, productId);
+                return orderDetail;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving OrderDetail for OrderId {OrderId} and ProductId {ProductId}", orderId, productId);
+                throw;
             }
             finally
             {
@@ -57,11 +80,18 @@ namespace StoreManager.Services
 
         public async Task<IEnumerable<OrderDetail>?> GetOrderDetailsByOrderIdAsync(int orderId)
         {
+            _logger.LogInformation("Starting GetOrderDetailsByOrderIdAsync for OrderId {OrderId}", orderId);
             await _unitOfWork.OpenConnectionAsync();
             try
             {
-                return await _unitOfWork.OrderDetailRepository.
-                    GetAsync(od => od.OrderId == orderId && od.IsActive == true);
+                var orderDetails = await _unitOfWork.OrderDetailRepository.GetAsync(od => od.OrderId == orderId && od.IsActive == true);
+                _logger.LogInformation("OrderDetails for OrderId {OrderId} retrieved successfully", orderId);
+                return orderDetails;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving OrderDetails for OrderId {OrderId}", orderId);
+                throw;
             }
             finally
             {
@@ -69,6 +99,12 @@ namespace StoreManager.Services
             }
         }
 
+        /// <summary>
+        /// Places an order with the specified details.
+        /// </summary>
+        /// <param name="order">The order to be placed.</param>
+        /// <param name="orderDetails">The details of the order.</param>
+        /// <returns>The ID of the placed order.</returns>
         public async Task<int> PlaceOrderAsyncAsync(Order order, IEnumerable<OrderDetail> orderDetails)
         {
             if (order == null) throw new ArgumentNullException(nameof(order));
@@ -110,17 +146,24 @@ namespace StoreManager.Services
 
         public async Task UpdateOrderAsync(Order order)
         {
+            _logger.LogInformation("Starting UpdateOrderAsync for OrderId {OrderId}", order.Id);
             await _unitOfWork.OpenConnectionAsync();
             try
             {
-                await _unitOfWork.OrderRepository.
-                   UpdateAsync(order);
+                await _unitOfWork.OrderRepository.UpdateAsync(order);
+                _logger.LogInformation("Order with OrderId {OrderId} updated successfully", order.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating Order with OrderId {OrderId}", order.Id);
+                throw;
             }
             finally
             {
                 await _unitOfWork.CloseConnectionAsync();
             }
         }
+
 
         private async Task ProcessOrderDetail(OrderDetail orderDetail, int orderId)
         {

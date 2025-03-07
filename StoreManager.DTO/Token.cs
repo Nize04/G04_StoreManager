@@ -12,10 +12,15 @@ namespace StoreManager.DTO
 
         [Required(ErrorMessage = "Token hash is required.")]
         [StringLength(512, ErrorMessage = "Token hash length cannot exceed 512 characters.")]
-        public string TokenHash { get; set; } = null!;
+        public byte[] AccessTokenHash { get; set; } = null!;
 
-        [Required(ErrorMessage = "Expiration date is required.")]
-        public DateTime ExpiresAt { get; set; }
+        public string RefreshToken { get; set; } = null!;
+
+        [Required(ErrorMessage = "Access token expiration date is required.")]
+        public DateTime AccessTokenExpiresAt { get; set; }
+
+        [Required(ErrorMessage = "Refresh token expiration date is required.")]
+        public DateTime RefreshTokenExpiresAt { get; set; }
 
         [Required(ErrorMessage = "Create date is required.")]
         public DateTime CreateDate { get; set; }

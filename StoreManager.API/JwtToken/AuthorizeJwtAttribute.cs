@@ -4,6 +4,7 @@ using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Services;
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 namespace MyAttributes
 {
 
@@ -41,11 +42,12 @@ namespace MyAttributes
                 return;
             }
 
+
             if (!_forAnyUser)
             {
-                IEnumerable<string> roleNames;
-                IEnumerable<Role> roles = await _roleService.GetRolesByAccountIdAsync((int)context.HttpContext.Session.GetInt32("Id")!);
-                roleNames = roles.Select(role => role.RoleName);
+                int accountId = int.Parse(context.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                IEnumerable<Role> roles = await _roleService.GetRolesByAccountIdAsync(accountId);
+                IEnumerable<string> roleNames = roles.Select(role => role.RoleName);
 
                 if (!_roles!.Any(requiredRole => roleNames.Contains(requiredRole)))
                 {
@@ -53,6 +55,7 @@ namespace MyAttributes
                     return;
                 }
             }
+
 
             var jwtHandler = new JwtSecurityTokenHandler();
             var jwtToken = jwtHandler.ReadJwtToken(token);

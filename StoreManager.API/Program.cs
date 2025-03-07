@@ -20,13 +20,13 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.Cookie.Name = "Session";
-    options.IdleTimeout = TimeSpan.FromDays(15);
+    options.IdleTimeout = TimeSpan.FromDays(1);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Strict;
 });
-
+new AuthenticationConfiguration(builder.Configuration).ConfigureServices(builder.Services);
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -47,13 +47,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<StoreManager.API.Middleware.ExceptionHandlingMiddleware>();
 
-app.UseSession();
-
-app.UseRouting();
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
+
 
 app.MapControllers();
 

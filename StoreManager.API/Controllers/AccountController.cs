@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using MyAttributes;
 using StoreManager.DTO;
 using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
+using System.Security.Claims;
 
 namespace StoreManager.API.Controllers
 {
@@ -13,136 +15,26 @@ namespace StoreManager.API.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
-        private readonly ITokenService _tokenService;
+        private readonly IAccountImageService _accountImageService;
         private readonly ISessionService _sessionService;
         private readonly IMapper _mapper;
         private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             IAccountService accountService,
-            ITokenService tokenService,
+            IAccountImageService accountImageService,
             IMapper mapper,
             ILogger<AccountController> logger,
             ISessionService sessionService)
         {
             _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
-            _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+            _accountImageService = accountImageService ?? throw new ArgumentNullException(nameof(accountImageService));
             _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        [HttpPost]
-        [Route("login")]
-        public async Task<IActionResult> Login(LoginModel model)
-        {
-            if (model == null || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
-            {
-                _logger.LogWarning("Login attempt failed. Invalid model received.");
-                return BadRequest("Invalid login credentials.");
-            }
-
-            var clientKey = $"{Request.HttpContext.Connection.RemoteIpAddress}:{model.Email}";
-
-            try
-            {
-                var result = await _accountService.ProcessLoginAsync(model.Email, model.Password, clientKey);
-
-                switch (result.Status)
-                {
-                    case LoginStatus.Success:
-
-                        await Authorize(result.Account);
-                        return Ok("Login Successful");
-
-                    case LoginStatus.Requires2FA:
-                        _sessionService.CustomSession(new Dictionary<string, object>() { { "Email", result.Account.Email } });
-                        return BadRequest("Please enter the 2FA code sent to your email.");
-
-                    case LoginStatus.LockedOut:
-                        return StatusCode(429, "Too many failed login attempts. Please try again later.");
-
-                    case LoginStatus.InvalidCredentials:
-                    default:
-                        return Unauthorized("Invalid credentials.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred during login for Email: {Email}", model.Email);
-                return StatusCode(500, "An error occurred while processing your request.");
-            }
-        }
-
-        [HttpPost]
-        [AuthorizeJwt]
-        [Route("LogOut")]
-        public async Task<IActionResult> LogOut()
-        {
-            _sessionService.Clear();
-
-            var jwtToken = HttpContext.Request.Cookies["jwtToken"];
-            if (!string.IsNullOrEmpty(jwtToken))
-            {
-                await _tokenService.RevokeTokenAsync(jwtToken);
-            }
-
-            HttpContext.Response.Cookies.Delete("jwtToken");
-
-            return Ok("LogOut successful");
-        }
-
-        [HttpPost]
-        [Route("verify-2fa")]
-        public async Task<IActionResult> Verify2FACode(string code)
-        {
-            if (string.IsNullOrWhiteSpace(code))
-            {
-                return BadRequest("Invalid code.");
-            }
-
-            try
-            {
-                string email = GetSessionEmail();
-                var result = _accountService.Verify2FACodeAsync(email, code);
-
-                switch (result)
-                {
-                    case TwoFAResult.LockedOut:
-                        _logger.LogWarning("2FA verification locked out for Email: {Email}", email);
-                        return Problem("Too many failed 2FA attempts. Please try again later.", statusCode: 429);
-                    case TwoFAResult.InvalidCode:
-                        _logger.LogWarning("2FA verification failed for Email: {Email}", email);
-                        return Unauthorized("Invalid 2FA code.");
-                    case TwoFAResult.Success:
-                        var account = await _accountService.GetAccountByEmailAsync(email);
-                        await Authorize(account!);
-                        return Ok("2FA verification successful.");
-                    default:
-                        return StatusCode(500, "Unknown error during 2FA verification.");
-                }
-            }
-
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during 2FA verification.");
-                return StatusCode(500, "An error occurred while processing your request.");
-            }
-        }
-
-        [HttpGet("GetAccountById")]
-        [AuthorizeJwt("Admin")]
-        public async Task<IActionResult> GetAccountById(int accountId)
-        {
-            var account = await _accountService.GetAccountByIdAsync(accountId);
-            if (account == null)
-            {
-                return NotFound("Account not found.");
-            }
-            return Ok(_mapper.Map<LoginModel>(account));
-        }
-
-        [HttpPost("Register")]
+        [HttpPost("register")]
         public async Task<IActionResult> RegisterAccount(RegisterModel accountModel)
         {
             if (accountModel == null)
@@ -162,6 +54,96 @@ namespace StoreManager.API.Controllers
             {
                 _logger.LogError(ex, "Error during registration for EmployeeId: {EmployeeId}", accountModel.Id);
                 return StatusCode(500, "An error occurred during registration.");
+            }
+        }
+
+        [HttpGet("GetAccountById")]
+        [AuthorizeJwt("Admin")]
+        public async Task<IActionResult> GetAccountById(int accountId)
+        {
+            var account = await _accountService.GetAccountByIdAsync(accountId);
+            if (account == null)
+            {
+                return NotFound("Account not found.");
+            }
+            return Ok(_mapper.Map<LoginModel>(account));
+        }
+
+        [HttpPost("uploadImage")]
+        [AuthorizeJwt]
+        public async Task<IActionResult> UploadImage(IFormFile file)
+        {
+            int accountId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            _logger.LogInformation("Received request to upload image for account: {AccountId}", accountId);
+
+            if (file == null || file.Length == 0)
+            {
+                _logger.LogWarning("No file uploaded for account: {AccountId}", accountId);
+                return BadRequest("No file uploaded.");
+            }
+
+            var fileName = Path.GetFileName(file.FileName);
+
+            try
+            {
+                using (var stream = file.OpenReadStream())
+                {
+                    _logger.LogInformation("Uploading file: {FileName} for account: {AccountId}", fileName, accountId);
+
+                    var fileUrl = await _accountImageService.UploadImageAsync(
+                        new AccountImage() { AccountId = accountId, FileName = file.FileName },
+                        stream
+                    );
+
+                    _logger.LogInformation("File uploaded successfully: {FileName} for account: {AccountId}", fileName, accountId);
+                    return Ok(new { FileUrl = fileUrl });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading file: {FileName} for account: {AccountId}", fileName, accountId);
+                return StatusCode(500, "An error occurred while uploading the file.");
+            }
+        }
+
+        [HttpGet("api/images/")]
+        [AuthorizeJwt]
+        public async Task<IActionResult> GetImageAsync(string fileName)
+        {
+            int accountId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            _logger.LogInformation("Received request to get image: {FileName} for account: {AccountId}", fileName, accountId);
+
+            try
+            {
+                byte[] fileBytes = await _accountImageService.GetImageByFileName(accountId, fileName);
+
+                if (fileBytes == null || fileBytes.Length == 0)
+                {
+                    _logger.LogWarning("File not found or empty: {FileName} for account: {AccountId}", fileName, accountId);
+                    return NotFound("File not found.");
+                }
+
+                var provider = new FileExtensionContentTypeProvider();
+                if (!provider.TryGetContentType(fileName, out var contentType))
+                {
+                    _logger.LogWarning("Could not determine content type for file: {FileName}. Defaulting to application/octet-stream.", fileName);
+                    contentType = "application/octet-stream";
+                }
+
+                _logger.LogInformation("Successfully retrieved image: {FileName} for account: {AccountId}", fileName, accountId);
+                return File(fileBytes, contentType);
+            }
+            catch (FileNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "File not found exception: {FileName} for account: {AccountId}", fileName, accountId);
+                return NotFound("File not found.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving image: {FileName} for account: {AccountId}", fileName, accountId);
+                return StatusCode(500, "An error occurred while retrieving the image.");
             }
         }
 
@@ -187,25 +169,6 @@ namespace StoreManager.API.Controllers
 
             _logger.LogInformation("2FA successfully enabled for Email: {Email}", email);
             return Ok("2FA has been successfully enabled.");
-        }
-
-        private async Task Authorize(Account account)
-        {
-            var tokenResponse = _tokenService.GenerateToken(account);
-
-            await _tokenService.InsertAsync(new Token
-            {
-                AccountId = tokenResponse.AccountId,
-                TokenHash = tokenResponse.Token,
-                ExpiresAt = tokenResponse.ExpiresAt,
-                DeviceInfo = UserRequestHelper.GetDeviceDetails()
-            });
-
-            _sessionService.CustomSession(new Dictionary<string, object>
-            {
-                { "Id", account.Id },
-                { "Email", account.Email }
-            });
         }
 
         private string GetSessionEmail()

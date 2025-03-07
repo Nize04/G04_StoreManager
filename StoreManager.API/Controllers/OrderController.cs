@@ -4,6 +4,7 @@ using MyAttributes;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
+using System.Security.Claims;
 
 namespace StoreManager.API.Controllers
 {
@@ -33,7 +34,7 @@ namespace StoreManager.API.Controllers
         {
             try
             {
-                request.Order.EmployeeId = (int)_sessionService.GetInt32("Id")!;
+                request.Order.EmployeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
                 if (request.Order.CustomerId == 0) request.Order.CustomerId = null;
                 _logger.LogInformation("EmployeeId: {EmployeeId} placing order", request.Order.EmployeeId);

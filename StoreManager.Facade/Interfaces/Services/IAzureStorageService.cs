@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
-
-namespace StoreManager.Facade.Interfaces.Services
+﻿namespace StoreManager.Facade.Interfaces.Services
 {
     public interface IAzureStorageService
     {
-        Task<string> UploadFileAsync(IFormFile file);
-        string GetBlobUrl(string fileName);
+        Task<string> UploadFileAsync(Stream fileStream, string fileName);
+        Task<bool> DeleteFileAsync(string fileName);
+        string GetFileUrl(string fileName);
     }
 }
