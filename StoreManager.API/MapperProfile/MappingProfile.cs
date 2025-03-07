@@ -17,6 +17,7 @@ namespace StoreManager.API.MapperProfile
             CreateMap<Role, RoleModel>().ReverseMap();
             CreateMap<SupplierTransaction, InputSupplierTransactionModel>().ReverseMap();
             CreateMap<Supplier, SupplierModel>().ReverseMap();
+            CreateMap<AccountImage, AccountImageModel>().ReverseMap();
         }
     }
 }

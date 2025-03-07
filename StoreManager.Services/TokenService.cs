@@ -2,11 +2,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StoreManager.DTO;
+using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Repositories;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace StoreManager.Services
@@ -16,10 +18,10 @@ namespace StoreManager.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private DateTime AccessTokenExpieresTime => DateTime.UtcNow.AddMinutes(30);
+        private DateTime RefreshTokenExpieresTime => DateTime.UtcNow.AddDays(30);
 
-        public TokenService(IUnitOfWork unitOfWork,
-            IConfiguration configuration,
-            IHttpContextAccessor httpContextAccessor)
+        public TokenService(IUnitOfWork unitOfWork, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -65,35 +67,64 @@ namespace StoreManager.Services
             }
         }
 
-        public TokenResponse GenerateToken(Account account)
+        public async Task<string> RefreshAccessToken(string refreshToken)
         {
-            var token = CreateJwtToken(account.Email);
+            try
+            {
+                await _unitOfWork.OpenConnectionAsync();
+
+                var token = await _unitOfWork.TokenRepository.GetByRefreshToken(refreshToken);
+                if (token == null) throw new ArgumentNullException(nameof(token));
+
+                var account = await _unitOfWork.AccountRepository.GetByIdAsync(token.AccountId);
+                if (account == null) throw new ArgumentNullException(nameof(account));
+
+                var newAccessToken = CreateJwtToken(account);
+                SetJwtCookie(newAccessToken);
+
+                token.AccessTokenExpiresAt = AccessTokenExpieresTime;
+                token.AccessTokenHash = newAccessToken.HashToken();
+
+                await _unitOfWork.TokenRepository.UpdateAsync(token);
+
+                return newAccessToken;
+            }
+            finally
+            {
+                await _unitOfWork.CloseConnectionAsync();
+            }
+        }
+
+        public TokenResponse GenerateTokenAsync(Account account)
+        {
+            var accessToken = CreateJwtToken(account);
             var refreshToken = GenerateRefreshToken();
-            SetJwtCookie(token);
+
+            SetJwtCookie(accessToken);
+            SetRefreshTokenCookie(refreshToken);
 
             return new TokenResponse
             {
-                Token = token,
+                AccessToken = accessToken,
                 AccountId = account.Id,
                 RefreshToken = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(15)
+                AccessTokenExpiresAt = AccessTokenExpieresTime,
+                RefreshTokenExpiresAt = RefreshTokenExpieresTime
             };
         }
 
-        private string CreateJwtToken(string email)
+        private string CreateJwtToken(Account account)
         {
             var issuer = _configuration["Jwt:Issuer"];
             var audience = _configuration["Jwt:Audience"];
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
-            var tokenExpiration = DateTime.UtcNow.AddDays(15);
+            var tokenExpiration = AccessTokenExpieresTime;
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
-        new Claim("Id", Guid.NewGuid().ToString()),
-        new Claim(JwtRegisteredClaimNames.Sub, email),
-        new Claim(JwtRegisteredClaimNames.Email, email),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
+                new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
+                new Claim(ClaimTypes.Email, account.Email)
+            };
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -120,10 +151,27 @@ namespace StoreManager.Services
 
             _httpContextAccessor.HttpContext.Response.Cookies.Append("jwtToken", token, cookieOptions);
         }
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = RefreshTokenExpieresTime
+            };
+
+            _httpContextAccessor.HttpContext.Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
 
         private string GenerateRefreshToken()
         {
-            return Guid.NewGuid().ToString();
+            var randomBytes = new byte[64];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            return Convert.ToBase64String(randomBytes);
         }
     }
 }

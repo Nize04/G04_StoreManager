@@ -7,7 +7,8 @@ namespace StoreManager.Facade.Interfaces.Services
     {
         Task<int> InsertAsync(Token token);
         Task RevokeTokenAsync(string tokenString);
-        TokenResponse GenerateToken(Account account);
+        TokenResponse GenerateTokenAsync(Account account);
         Task<bool> IsTokenValidAsync(string tokenString);
+        Task<string> RefreshAccessToken(string refreshToken);
     }
 }

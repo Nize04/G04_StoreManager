@@ -13,16 +13,19 @@ namespace StoreManager.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<AccountService> _logger;
         private readonly ITwoFactorAuthService _twoFactorAuthService;
+        private readonly IBlobStorageService _blobStorageService;
         private readonly ILoginAttemptTracker _loginAttemptTracker;
 
         public AccountService(IUnitOfWork unitOfWork,
             ILogger<AccountService> logger,
             ITwoFactorAuthService twoFactorAuthService,
+            IBlobStorageService blobStorageService,
             ILoginAttemptTracker loginAttemptTracker)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _twoFactorAuthService = twoFactorAuthService ?? throw new ArgumentNullException(nameof(twoFactorAuthService));
+            _blobStorageService = blobStorageService ?? throw new ArgumentNullException(nameof(blobStorageService));
             _loginAttemptTracker = loginAttemptTracker ?? throw new ArgumentNullException(nameof(loginAttemptTracker));
         }
 
@@ -91,7 +94,7 @@ namespace StoreManager.Services
             }
         }
 
-        public TwoFAResult Verify2FACodeAsync(string email, string code) =>
+        public TwoFAResult Verify2FACode(string email, string code) =>
             _twoFactorAuthService.Verify2FACode(email, code);
 
         public async Task<LoginResult> ProcessLoginAsync(string email, string password, string clientKey)
@@ -116,7 +119,7 @@ namespace StoreManager.Services
 
             if (account.Requires2FA)
             {
-                if (!await Send2FACodeAsync(account))
+                if (!await Send2FACodeAsync(email))
                 {
                     _logger.LogError("Failed to send 2FA code for Email: {Email}", account.Email);
                     return new LoginResult { Status = LoginStatus.Failed2FASending };
@@ -129,9 +132,9 @@ namespace StoreManager.Services
             return new LoginResult { Status = LoginStatus.Success, Account = account };
         }
 
-        private async Task<bool> Send2FACodeAsync(Account account)
+        private async Task<bool> Send2FACodeAsync(string email)
         {
-            return await _twoFactorAuthService.Send2FACodeAsync(account.Email);
+            return await _twoFactorAuthService.Send2FACodeAsync(email);
         }
 
         public async Task<object> RegisterAsync(Account account)
@@ -146,62 +149,6 @@ namespace StoreManager.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Registration failed EmployeeId: {EmployeeId}", account.Id);
-                throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-            }
-        }
-
-        public async Task<int> UploadImageAsync(AccountImage accountImage)
-        {
-            try
-            {
-                _logger.LogInformation("Starting upload for image with AccountId: {AccountId}", accountImage.AccountId);
-
-                await _unitOfWork.OpenConnectionAsync();
-
-                int result = (int)await _unitOfWork.AccountImageRepository.InsertAsync(accountImage);
-
-                _logger.LogInformation("Image uploaded successfully for AccountId: {AccountId}", accountImage.AccountId);
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while uploading image for AccountId: {AccountId}", accountImage.AccountId);
-                throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-            }
-        }
-
-        public async Task<IEnumerable<AccountImage>> GetImagesAsync()
-        {
-            _logger.LogInformation("Fetching all active images.");
-
-            await _unitOfWork.OpenConnectionAsync();
-            try
-            {
-                var images = await _unitOfWork.AccountImageRepository.GetAsync(i => i.IsActive);
-
-                if (!images.Any())
-                {
-                    _logger.LogWarning("No active images found.");
-                }
-                else
-                {
-                    _logger.LogInformation("Successfully fetched {ImageCount} active images.", images.Count());
-                }
-
-                return images;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while fetching images.");
                 throw;
             }
             finally

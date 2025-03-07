@@ -10,7 +10,7 @@ namespace StoreManager.Repositories
         {
         }
 
-        protected override string[] UnwantedPropertiesForInsert => new string[] { "IsActive", "UploadedDate" };
+        protected override string[] UnwantedPropertiesForInsert => new string[] { "Id", "IsActive", "UploadedDate" };
         protected override string[] UnwantedPropertiesForUpdate => new string[] { "IsActive", "UploadedDate" };
     }
 }
