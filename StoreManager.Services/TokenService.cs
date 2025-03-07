@@ -67,6 +67,7 @@ namespace StoreManager.Services
             }
         }
 
+       
         public async Task<string> RefreshAccessToken(string refreshToken)
         {
             try
@@ -80,10 +81,14 @@ namespace StoreManager.Services
                 if (account == null) throw new ArgumentNullException(nameof(account));
 
                 var newAccessToken = CreateJwtToken(account);
+                var newRefreshToken = GenerateRefreshToken();
                 SetJwtCookie(newAccessToken);
+                SetRefreshTokenCookie(newRefreshToken);
 
                 token.AccessTokenExpiresAt = AccessTokenExpieresTime;
+                token.RefreshTokenExpiresAt = RefreshTokenExpieresTime;
                 token.AccessTokenHash = newAccessToken.HashToken();
+                token.RefreshToken = newRefreshToken;
 
                 await _unitOfWork.TokenRepository.UpdateAsync(token);
 
