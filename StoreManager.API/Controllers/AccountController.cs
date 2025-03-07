@@ -14,20 +14,23 @@ namespace StoreManager.API.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly IAccountService _accountService;
+        private readonly IAccountCommandService _accountCommandService;
+        private readonly IAccountQueryService _accountQueryService;
         private readonly IAccountImageService _accountImageService;
         private readonly ISessionService _sessionService;
         private readonly IMapper _mapper;
         private readonly ILogger<AccountController> _logger;
 
         public AccountController(
-            IAccountService accountService,
+            IAccountCommandService accountCommandService,
+            IAccountQueryService accountQueryService,
             IAccountImageService accountImageService,
             IMapper mapper,
             ILogger<AccountController> logger,
             ISessionService sessionService)
         {
-            _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
+            _accountCommandService = accountCommandService ?? throw new ArgumentNullException(nameof(accountCommandService));
+            _accountQueryService = accountQueryService ?? throw new ArgumentNullException(nameof(accountQueryService));
             _accountImageService = accountImageService ?? throw new ArgumentNullException(nameof(accountImageService));
             _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -45,7 +48,7 @@ namespace StoreManager.API.Controllers
             try
             {
                 _logger.LogInformation("Registration started for EmployeeId: {EmployeeId}", accountModel.Id);
-                await _accountService.RegisterAsync(_mapper.Map<Account>(accountModel));
+                await _accountCommandService.RegisterAsync(_mapper.Map<Account>(accountModel));
                 _logger.LogInformation("Registration successful for EmployeeId: {EmployeeId}", accountModel.Id);
 
                 return Ok("Account registered successfully.");
@@ -61,7 +64,7 @@ namespace StoreManager.API.Controllers
         [AuthorizeJwt("Admin")]
         public async Task<IActionResult> GetAccountById(int accountId)
         {
-            var account = await _accountService.GetAccountByIdAsync(accountId);
+            var account = await _accountQueryService.GetAccountByIdAsync(accountId);
             if (account == null)
             {
                 return NotFound("Account not found.");
@@ -152,7 +155,7 @@ namespace StoreManager.API.Controllers
         public async Task<IActionResult> Set2FA(string password)
         {
             string email = GetSessionEmail();
-            var account = await _accountService.GetAccountByEmailAsync(email);
+            var account = await _accountQueryService.GetAccountByEmailAsync(email);
 
             if (account!.Requires2FA)
             {
@@ -165,7 +168,7 @@ namespace StoreManager.API.Controllers
             }
 
             account.Requires2FA = true;
-            await _accountService.UpdateAccount(account);
+            await _accountCommandService.UpdateAccount(account);
 
             _logger.LogInformation("2FA successfully enabled for Email: {Email}", email);
             return Ok("2FA has been successfully enabled.");

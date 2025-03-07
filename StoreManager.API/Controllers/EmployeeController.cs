@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using MyAttributes;
 using StoreManager.DTO;
-using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
 
 namespace StoreManager.API.Controllers
@@ -12,16 +11,19 @@ namespace StoreManager.API.Controllers
     [ApiController]
     public class EmployeeController : ControllerBase
     {
-        private readonly IEmployeeService _employeeService;
+        private readonly IEmployeeCommandService _employeeCommandService;
+        private readonly IEmployeeQueryService _employeeQueryService;
         private readonly ILogger<EmployeeController> _logger;
         private readonly IMapper _mapper;
 
         public EmployeeController(
-            IEmployeeService employeeService,
+            IEmployeeCommandService employeeCommandService,
+            IEmployeeQueryService employeeQueryService,
             ILogger<EmployeeController> logger,
             IMapper mapper)
         {
-            _employeeService = employeeService ?? throw new ArgumentNullException(nameof(employeeService));
+            _employeeCommandService = employeeCommandService ?? throw new ArgumentNullException(nameof(employeeCommandService));
+            _employeeQueryService = employeeQueryService ?? throw new ArgumentNullException(nameof(employeeQueryService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
@@ -41,7 +43,7 @@ namespace StoreManager.API.Controllers
                     employeeModel.FirstName, employeeModel.LastName);
 
                 var employee = _mapper.Map<Employee>(employeeModel);
-                int employeeId = await _employeeService.AddEmployeeAsync(employee);
+                int employeeId = await _employeeCommandService.AddEmployeeAsync(employee);
 
                 _logger.LogInformation("Successfully added employee with ID {EmployeeId}", employeeId);
                 return CreatedAtAction(nameof(GetEmployeeById), new { employeeId }, "Employee added successfully.");
@@ -67,7 +69,7 @@ namespace StoreManager.API.Controllers
             {
                 _logger.LogInformation("Retrieving employee with ID {EmployeeId}", employeeId);
 
-                var employee = await _employeeService.GetEmployeeByIdAsync(employeeId);
+                var employee = await _employeeQueryService.GetEmployeeByIdAsync(employeeId);
                 if (employee == null)
                 {
                     _logger.LogWarning("Employee not found for ID {EmployeeId}", employeeId);

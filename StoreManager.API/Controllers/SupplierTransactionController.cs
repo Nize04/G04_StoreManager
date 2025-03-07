@@ -13,18 +13,21 @@ namespace StoreManager.API.Controllers
     [AuthorizeJwt("Manager")]
     public class SupplierTransactionController : ControllerBase
     {
-        private readonly ISupplierTransactionService _supplierTransactionService;
+        private readonly ISupplierTransactionCommandService _supplierTransactionCommandService;
+        private readonly ISupplierTransactionQueryService _supplierTransactionQueryService;
         private readonly ISessionService _sessionService;
         private readonly IMapper _mapper;
         private readonly ILogger<SupplierTransactionController> _logger;
 
         public SupplierTransactionController(
-            ISupplierTransactionService supplierTransactionService,
+            ISupplierTransactionCommandService supplierTransactionService,
+            ISupplierTransactionQueryService supplierTransactionQueryService,
             IMapper mapper,
             ISessionService sessionService,
             ILogger<SupplierTransactionController> logger)
         {
-            _supplierTransactionService = supplierTransactionService ?? throw new ArgumentNullException(nameof(supplierTransactionService));
+            _supplierTransactionCommandService = supplierTransactionService ?? throw new ArgumentNullException(nameof(supplierTransactionService));
+            _supplierTransactionQueryService = supplierTransactionQueryService ?? throw new ArgumentNullException(nameof(supplierTransactionQueryService));
             _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -44,7 +47,7 @@ namespace StoreManager.API.Controllers
 
                 _logger.LogInformation("Creating supplier transaction by EmployeeId: {EmployeeId}", supplierTransaction.EmployeeId);
 
-                await _supplierTransactionService.CreateTransactionAsync(supplierTransaction,
+                await _supplierTransactionCommandService.CreateTransactionAsync(supplierTransaction,
                     _mapper.Map<IEnumerable<SupplierTransactionDetail>>(makeSupplierTransactionRequest.SupplierTransactionDetails));
 
                 _logger.LogInformation("Supplier transaction created successfully.");
@@ -64,7 +67,7 @@ namespace StoreManager.API.Controllers
 
             try
             {
-                SupplierTransaction? supplierTransaction = await _supplierTransactionService.GetTransactionByIdAsync(id);
+                SupplierTransaction? supplierTransaction = await _supplierTransactionQueryService.GetTransactionByIdAsync(id);
 
                 if (supplierTransaction == null)
                 {
@@ -74,7 +77,7 @@ namespace StoreManager.API.Controllers
 
                 _logger.LogInformation("Supplier transaction found, fetching transaction details.");
                 IEnumerable<SupplierTransactionDetail> sTransactionDetails =
-                    await _supplierTransactionService.GetTransactionDetailsAsync(supplierTransaction.Id);
+                    await _supplierTransactionQueryService.GetTransactionDetailsAsync(supplierTransaction.Id);
 
                 var result = new GetSupplierTransactionModel()
                 {

@@ -17,7 +17,8 @@ namespace StoreManager.Tests
                 new SqlConnection(GetConnectionString()));
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<DatabaseFixture>();
-            services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IOrderQueryService, OrderQueryService>();
+            services.AddScoped<IOrderCommandService, OrderCommandService>();
         }
 
         private string GetConnectionString()
