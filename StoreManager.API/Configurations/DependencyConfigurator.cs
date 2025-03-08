@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using DeviceDetectorNET.Parser.Device;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Caching.Memory;
 using StoreManager.Facade.Interfaces.Repositories;
 using StoreManager.Facade.Interfaces.Services;

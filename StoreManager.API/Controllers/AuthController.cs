@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MyAttributes;
-using StoreManager.DTO;
-using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
 
@@ -33,12 +31,12 @@ namespace StoreManager.API.Controllers
 
         [HttpPost]
         [Route("login")]
-        public async Task<IActionResult> Login(LoginModel model)
+        public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             if (model == null || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
             {
                 _logger.LogWarning("Login attempt failed. Invalid model received.");
-                return BadRequest("Invalid login credentials.");
+                return BadRequest(new { message = "Invalid login credentials." });
             }
 
             var clientKey = $"{Request.HttpContext.Connection.RemoteIpAddress}:{model.Email}";
@@ -50,25 +48,25 @@ namespace StoreManager.API.Controllers
                 switch (result.Status)
                 {
                     case LoginStatus.Success:
-                        await Authorize(result.Account);
-                        return Ok("Login Successful");
+                        await _accountCommandService.AuthorizeAccountAsync(result.Account);
+                        return Ok(new { message = "Login Successful" });
 
                     case LoginStatus.Requires2FA:
                         _sessionService.CustomSession(new Dictionary<string, object> { { "Email", result.Account.Email } });
-                        return BadRequest("Please enter the 2FA code sent to your email.");
+                        return BadRequest(new { message = "Please enter the 2FA code sent to your email." });
 
                     case LoginStatus.LockedOut:
-                        return StatusCode(429, "Too many failed login attempts. Please try again later.");
+                        return StatusCode(429, new { message = "Too many failed login attempts. Please try again later." });
 
                     case LoginStatus.InvalidCredentials:
                     default:
-                        return Unauthorized("Invalid credentials.");
+                        return Unauthorized(new { message = "Invalid credentials." });
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during login for Email: {Email}", model.Email);
-                return StatusCode(500, "An error occurred while processing your request.");
+                return StatusCode(500, new { message = "An error occurred while processing your request." });
             }
         }
 
@@ -96,7 +94,7 @@ namespace StoreManager.API.Controllers
                         return Unauthorized("Invalid 2FA code.");
                     case TwoFAResult.Success:
                         var account = await _accountQueryService.GetAccountByEmailAsync(email);
-                        await Authorize(account!);
+                        await _accountCommandService.AuthorizeAccountAsync(account);
                         return Ok("2FA verification successful.");
                     default:
                         return StatusCode(500, "Unknown error during 2FA verification.");
@@ -150,21 +148,6 @@ namespace StoreManager.API.Controllers
                 _logger.LogError(ex, "Error refreshing token.");
                 return StatusCode(500, "An error occurred while refreshing the token.");
             }
-        }
-
-        private async Task Authorize(Account account)
-        {
-            var tokenResponse = _tokenService.GenerateTokenAsync(account);
-
-            await _tokenService.InsertAsync(new Token
-            {
-                AccountId = tokenResponse.AccountId,
-                AccessTokenHash = tokenResponse.AccessToken.HashToken(),
-                RefreshToken = tokenResponse.RefreshToken,
-                AccessTokenExpiresAt = tokenResponse.AccessTokenExpiresAt,
-                RefreshTokenExpiresAt = tokenResponse.RefreshTokenExpiresAt,
-                DeviceInfo = UserRequestHelper.GetDeviceDetails()
-            });
         }
     }
 }

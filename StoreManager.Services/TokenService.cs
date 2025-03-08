@@ -18,6 +18,10 @@ namespace StoreManager.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly string _issuer;
+        private readonly string _audience;
+        private readonly byte[] _key;
+
         private DateTime AccessTokenExpieresTime => DateTime.UtcNow.AddMinutes(30);
         private DateTime RefreshTokenExpieresTime => DateTime.UtcNow.AddDays(30);
 
@@ -26,6 +30,10 @@ namespace StoreManager.Services
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+
+            _issuer = _configuration["Jwt:Issuer"]!;
+            _audience = _configuration["Jwt:Audience"]!;
+            _key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!.PadRight(64, '0'));
         }
 
         public async Task<int> InsertAsync(Token token)
@@ -119,9 +127,6 @@ namespace StoreManager.Services
 
         private string CreateJwtToken(Account account)
         {
-            var issuer = _configuration["Jwt:Issuer"];
-            var audience = _configuration["Jwt:Audience"];
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]!);
             var tokenExpiration = AccessTokenExpieresTime;
 
             var claims = new List<Claim>
@@ -134,9 +139,9 @@ namespace StoreManager.Services
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = tokenExpiration,
-                Issuer = issuer,
-                Audience = audience,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
+                Issuer = _issuer,
+                Audience = _audience,
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(_key), SecurityAlgorithms.HmacSha512Signature)
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

@@ -7,4 +7,5 @@ public interface IAccountCommandService
     Task UpdateAccount(Account account);
     Task<LoginResult> ProcessLoginAsync(string email, string password, string clientKey);
     TwoFAResult Verify2FACode(string email, string code);
+    Task AuthorizeAccountAsync(Account account);
 }
