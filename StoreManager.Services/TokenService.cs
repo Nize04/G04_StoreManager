@@ -75,31 +75,51 @@ namespace StoreManager.Services
             }
         }
 
-        public async Task<string> RefreshAccessToken(string refreshToken)
+        public async Task<string> RefreshToken(string refreshToken)
         {
+            await _unitOfWork.OpenConnectionAsync();
+
+            await _unitOfWork.BeginTransactionAsync();
+
             try
             {
-                await _unitOfWork.OpenConnectionAsync();
-
                 var token = await _unitOfWork.TokenRepository.GetByRefreshToken(refreshToken);
-                if (token == null) throw new ArgumentNullException(nameof(token));
+                if (token == null || token.RevokedAt >= DateTime.UtcNow || token.RefreshTokenExpiresAt <= DateTime.UtcNow)
+                {
+                    throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+                }
 
                 var account = await _unitOfWork.AccountRepository.GetByIdAsync(token.AccountId);
-                if (account == null) throw new ArgumentNullException(nameof(account));
+                if (account == null) throw new UnauthorizedAccessException("Account not found.");
+
+                token.RevokedAt = DateTime.UtcNow;
+                await _unitOfWork.TokenRepository.UpdateAsync(token);
 
                 var newAccessToken = CreateJwtToken(account);
                 var newRefreshToken = GenerateRefreshToken();
+
+                var newToken = new Token
+                {
+                    AccountId = account.Id,
+                    AccessTokenHash = newAccessToken.HashToken(),
+                    RefreshToken = newRefreshToken,
+                    AccessTokenExpiresAt = AccessTokenExpieresTime,
+                    RefreshTokenExpiresAt = RefreshTokenExpieresTime,
+                    DeviceInfo = UserRequestHelper.GetDeviceDetails()
+                };
+
+                await _unitOfWork.TokenRepository.InsertAsync(newToken);
+                await _unitOfWork.CommitAsync();
+
                 SetJwtCookie(newAccessToken);
                 SetRefreshTokenCookie(newRefreshToken);
 
-                token.AccessTokenExpiresAt = AccessTokenExpieresTime;
-                token.RefreshTokenExpiresAt = RefreshTokenExpieresTime;
-                token.AccessTokenHash = newAccessToken.HashToken();
-                token.RefreshToken = newRefreshToken;
-
-                await _unitOfWork.TokenRepository.UpdateAsync(token);
-
                 return newAccessToken;
+            }
+            catch
+            {
+                await _unitOfWork.RollBackAsync();
+                throw;
             }
             finally
             {

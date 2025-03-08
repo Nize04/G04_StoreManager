@@ -46,6 +46,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 
+app.UseHttpsRedirection();
+
 // ? Use Session before Authentication
 app.UseSession();
 app.UseAuthentication();
