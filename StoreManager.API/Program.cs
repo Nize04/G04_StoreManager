@@ -5,10 +5,7 @@ using StoreManager.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Add services to the container
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(MappingProfiles));
@@ -23,17 +20,19 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromDays(1);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.None : CookieSecurePolicy.Always; // ? Fix for Dev Mode
     options.Cookie.SameSite = SameSiteMode.Strict;
 });
+
+// ? Use a better method to configure authentication
 new AuthenticationConfiguration(builder.Configuration).ConfigureServices(builder.Services);
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-});
+
+builder.Services.AddControllers();
+
 var app = builder.Build();
 UserRequestHelper.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 
+// ? Move this up (Before Routing)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
@@ -45,17 +44,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseMiddleware<StoreManager.API.Middleware.ExceptionHandlingMiddleware>();
-
-
-app.UseHttpsRedirection();
-
 app.UseRouting();
+
+// ? Use Session before Authentication
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseSession();
 
+// Exception handling middleware
+app.UseMiddleware<StoreManager.API.Middleware.ExceptionHandlingMiddleware>();
 
-app.MapControllers();
+app.MapControllers(); // Map API controllers
+
+app.UseHttpsRedirection(); // Redirect HTTP to HTTPS
 
 app.Run();

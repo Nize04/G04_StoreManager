@@ -13,16 +13,19 @@ namespace StoreManager.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<AccountCommandService> _logger;
         private readonly ITwoFactorAuthService _twoFactorAuthService;
+        private readonly ITokenService _tokenService;
         private readonly ILoginAttemptTracker _loginAttemptTracker;
 
         public AccountCommandService(IUnitOfWork unitOfWork,
             ILogger<AccountCommandService> logger,
             ITwoFactorAuthService twoFactorAuthService,
+            ITokenService tokenService,
             ILoginAttemptTracker loginAttemptTracker)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _twoFactorAuthService = twoFactorAuthService ?? throw new ArgumentNullException(nameof(twoFactorAuthService));
+            _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
             _loginAttemptTracker = loginAttemptTracker ?? throw new ArgumentNullException(nameof(loginAttemptTracker));
         }
 
@@ -46,6 +49,7 @@ namespace StoreManager.Services
                 await _unitOfWork.CloseConnectionAsync();
             }
         }
+
         public async Task<LoginResult> ProcessLoginAsync(string email, string password, string clientKey)
         {
             var account = await _unitOfWork.AccountRepository.GetByEmailAsync(email);
@@ -80,10 +84,26 @@ namespace StoreManager.Services
             _loginAttemptTracker.ResetLoginAttempts(clientKey);
             return new LoginResult { Status = LoginStatus.Success, Account = account };
         }
+
+        public async Task AuthorizeAccountAsync(Account account)
+        {
+            var tokenResponse = _tokenService.GenerateTokenAsync(account);
+
+            await _tokenService.InsertAsync(new Token
+            {
+                AccountId = tokenResponse.AccountId,
+                AccessTokenHash = tokenResponse.AccessToken.HashToken(),
+                RefreshToken = tokenResponse.RefreshToken,
+                AccessTokenExpiresAt = tokenResponse.AccessTokenExpiresAt,
+                RefreshTokenExpiresAt = tokenResponse.RefreshTokenExpiresAt,
+                DeviceInfo = UserRequestHelper.GetDeviceDetails()
+            });
+        }
+
         public TwoFAResult Verify2FACode(string email, string code) =>
           _twoFactorAuthService.Verify2FACode(email, code);
 
-        private async Task<bool> Send2FACodeAsync(string email) => 
+        private async Task<bool> Send2FACodeAsync(string email) =>
             await _twoFactorAuthService.Send2FACodeAsync(email);
 
         public async Task UpdateAccount(Account account)
