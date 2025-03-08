@@ -9,6 +9,6 @@ namespace StoreManager.Facade.Interfaces.Services
         Task RevokeTokenAsync(string tokenString);
         TokenResponse GenerateTokenAsync(Account account);
         Task<bool> IsTokenValidAsync(string tokenString);
-        Task<string> RefreshAccessToken(string refreshToken);
+        Task<string> RefreshToken(string refreshToken);
     }
 }
