@@ -110,10 +110,11 @@ namespace StoreManager.Services
                };
 
                await _unitOfWork.TokenRepository.InsertAsync(newToken);
-               await _unitOfWork.CommitAsync();
 
                SetJwtCookie(newAccessToken);
                SetRefreshTokenCookie(newRefreshToken);
+               
+               await _unitOfWork.CommitAsync();
 
                return newAccessToken;
            }
