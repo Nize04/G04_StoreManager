@@ -75,7 +75,12 @@ namespace StoreManager.Services
             }
         }
 
+<<<<<<< HEAD
         public async Task<string> RefreshToken(string refreshToken)
+=======
+       
+        public async Task<string> RefreshAccessToken(string refreshToken)
+>>>>>>> 1625a37851fed06c4c62a37f206365f3525f540c
         {
             await _unitOfWork.OpenConnectionAsync();
 
