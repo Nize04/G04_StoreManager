@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\StoreManager.DTO\StoreManager.DTO.csproj" />
+	  <ProjectReference Include="..\StoreManager.Facade\StoreManager.Facade.csproj" />
   </ItemGroup>
 
 </Project>

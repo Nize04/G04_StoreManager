@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\StoreManager.Extensions\StoreManager.Extensions.csproj" />
     <ProjectReference Include="..\StoreManager.Facade\StoreManager.Facade.csproj" />
   </ItemGroup>
 

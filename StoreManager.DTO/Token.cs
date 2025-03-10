@@ -28,7 +28,11 @@ namespace StoreManager.DTO
         public DateTime? RevokedAt { get; set; }
 
         [StringLength(500, ErrorMessage = "Device info cannot exceed 500 characters.")]
-        public string? DeviceInfo { get; set; }
+        public string DeviceInfo { get; set; } = null!;
+
+        [Required(ErrorMessage = "IP address is required.")]
+        [StringLength(45, ErrorMessage = "IP address cannot exceed 45 characters.")]
+        public string IpAddress { get; set; } = null!;
 
         public bool IsActive { get; set; }
     }
