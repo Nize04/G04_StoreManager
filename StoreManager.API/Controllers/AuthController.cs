@@ -140,8 +140,8 @@ namespace StoreManager.API.Controllers
 
             try
             {
-                var newToken = await _tokenService.RefreshAccessToken(refreshToken);
-                return Ok(newToken);
+                var newToken = await _tokenService.RefreshToken(refreshToken);
+                return Ok(new { newToken });
             }
             catch (Exception ex)
             {

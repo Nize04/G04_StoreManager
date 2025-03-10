@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using StoreManager.API.Configurations;
 using StoreManager.API.MapperProfile;
-using StoreManager.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +29,6 @@ new AuthenticationConfiguration(builder.Configuration).ConfigureServices(builder
 builder.Services.AddControllers();
 
 var app = builder.Build();
-UserRequestHelper.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 
 // ? Move this up (Before Routing)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -45,6 +43,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+
+app.UseHttpsRedirection();
 
 // ? Use Session before Authentication
 app.UseSession();

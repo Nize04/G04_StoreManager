@@ -1,10 +1,12 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using StoreManager.DTO;
 using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Repositories;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Facade.Interfaces.Trackers;
+using StoreManager.Facade.Interfaces.Utilities;
 using StoreManager.Models;
+using System.Security;
 
 namespace StoreManager.Services
 {
@@ -14,18 +16,21 @@ namespace StoreManager.Services
         private readonly ILogger<AccountCommandService> _logger;
         private readonly ITwoFactorAuthService _twoFactorAuthService;
         private readonly ITokenService _tokenService;
+        private readonly IUserRequestHelper _userRequestHelper;
         private readonly ILoginAttemptTracker _loginAttemptTracker;
 
         public AccountCommandService(IUnitOfWork unitOfWork,
             ILogger<AccountCommandService> logger,
             ITwoFactorAuthService twoFactorAuthService,
             ITokenService tokenService,
+            IUserRequestHelper userRequestHelper,
             ILoginAttemptTracker loginAttemptTracker)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _twoFactorAuthService = twoFactorAuthService ?? throw new ArgumentNullException(nameof(twoFactorAuthService));
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+            _userRequestHelper = userRequestHelper ?? throw new ArgumentNullException(nameof(userRequestHelper));
             _loginAttemptTracker = loginAttemptTracker ?? throw new ArgumentNullException(nameof(loginAttemptTracker));
         }
 
@@ -87,17 +92,63 @@ namespace StoreManager.Services
 
         public async Task AuthorizeAccountAsync(Account account)
         {
-            var tokenResponse = _tokenService.GenerateTokenAsync(account);
-
-            await _tokenService.InsertAsync(new Token
+            if (account == null)
             {
-                AccountId = tokenResponse.AccountId,
-                AccessTokenHash = tokenResponse.AccessToken.HashToken(),
-                RefreshToken = tokenResponse.RefreshToken,
-                AccessTokenExpiresAt = tokenResponse.AccessTokenExpiresAt,
-                RefreshTokenExpiresAt = tokenResponse.RefreshTokenExpiresAt,
-                DeviceInfo = UserRequestHelper.GetDeviceDetails()
-            });
+                throw new ArgumentNullException(nameof(account), "Account cannot be null.");
+            }
+
+            string ipAddress = _userRequestHelper.GetUserIpAddress()!;
+            string deviceInfo = _userRequestHelper.GetDeviceDetails();
+
+            try
+            {
+                var clientInfo = _userRequestHelper.GetClientInfoFromDeviceInfo(deviceInfo);
+
+                if (SecurityHelper.IsKnownBot(clientInfo))
+                {
+                    _logger.LogWarning("⚠️ Bot detected! Blocking authorization attempt. IP: {IpAddress}, Device Info: {DeviceInfo}", ipAddress, deviceInfo);
+                    throw new SecurityException("Authorization blocked due to bot activity.");
+                }
+
+                if (SecurityHelper.IsSuspiciousIp(ipAddress))
+                {
+                    _logger.LogWarning("⚠️ Suspicious IP detected! Additional verification needed. IP: {IpAddress}", ipAddress);
+                    throw new SecurityException("Authorization blocked due to suspicious IP address activity.");
+                }
+
+                var tokenResponse = _tokenService.GenerateTokenAsync(account);
+
+                if (tokenResponse == null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
+                {
+                    _logger.LogError("❌ Failed to generate token for account {UserId}, IP: {IpAddress}", account.Id, ipAddress);
+                    throw new InvalidOperationException("Failed to generate authentication token.");
+                }
+
+                await _tokenService.InsertAsync(new Token
+                {
+                    AccountId = tokenResponse.AccountId,
+                    AccessTokenHash = tokenResponse.AccessToken.HashToken(),
+                    RefreshToken = tokenResponse.RefreshToken,
+                    AccessTokenExpiresAt = tokenResponse.AccessTokenExpiresAt,
+                    RefreshTokenExpiresAt = tokenResponse.RefreshTokenExpiresAt,
+                    IpAddress = ipAddress,
+                    DeviceInfo = deviceInfo,
+                    CreateDate = DateTime.UtcNow
+                });
+
+                _logger.LogInformation("✅ Account successfully authorized. UserId: {UserId}, IP: {IpAddress}, Device Info: {DeviceInfo}",
+                    account.Id, ipAddress, deviceInfo);
+            }
+            catch (SecurityException secEx)
+            {
+                _logger.LogError(secEx, "❌ Security issue during authorization: {Message}", secEx.Message);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error during authorization process for UserId: {UserId}", account.Id);
+                throw new InvalidOperationException("An error occurred while authorizing the account. Please try again.");
+            }
         }
 
         public TwoFAResult Verify2FACode(string email, string code) =>

@@ -1,9 +1,10 @@
-﻿using DeviceDetectorNET.Parser.Device;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Caching.Memory;
+using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Repositories;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Facade.Interfaces.Trackers;
+using StoreManager.Facade.Interfaces.Utilities;
 using StoreManager.Models;
 using StoreManager.Repositories;
 using StoreManager.Services;
@@ -38,10 +39,11 @@ public static class DependencyConfigurator
         builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
         builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
+        builder.Services.AddScoped<IUserRequestHelper, UserRequestHelper>();
         builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
         builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         builder.Services.AddSingleton<ISessionService, SessionService>();
-        builder.Services.AddSingleton<ILogger<Program>, Logger<Program>>();
+        builder.Services.AddSingleton<ILogger<Program>, Microsoft.Extensions.Logging.Logger<Program>>();
         builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
         builder.Services.AddSingleton<ILoginAttemptTracker, LoginAttemptTracker>();
     }

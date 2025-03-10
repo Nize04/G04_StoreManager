@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StoreManager.DTO;
@@ -75,7 +75,57 @@ namespace StoreManager.Services
             }
         }
 
-       
+        public async Task<string> RefreshAccessToken(string refreshToken)
+        {
+            await _unitOfWork.OpenConnectionAsync();
+
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                var token = await _unitOfWork.TokenRepository.GetByRefreshToken(refreshToken);
+                if (token == null || token.RevokedAt >= DateTime.UtcNow || token.RefreshTokenExpiresAt <= DateTime.UtcNow)
+                {
+                    throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+                }
+
+                var account = await _unitOfWork.AccountRepository.GetByIdAsync(token.AccountId);
+                if (account == null) throw new UnauthorizedAccessException("Account not found.");
+
+                token.RevokedAt = DateTime.UtcNow;
+                await _unitOfWork.TokenRepository.UpdateAsync(token);
+
+                var newAccessToken = CreateJwtToken(account);
+                var newRefreshToken = GenerateRefreshToken();
+
+                var newToken = new Token
+                {
+                    AccountId = account.Id,
+                    AccessTokenHash = newAccessToken.HashToken(),
+                    RefreshToken = newRefreshToken,
+                    AccessTokenExpiresAt = AccessTokenExpieresTime,
+                    RefreshTokenExpiresAt = RefreshTokenExpieresTime,
+                    DeviceInfo = UserRequestHelper.GetDeviceDetails()
+                };
+
+                await _unitOfWork.TokenRepository.InsertAsync(newToken);
+                await _unitOfWork.CommitAsync();
+
+                SetJwtCookie(newAccessToken);
+                SetRefreshTokenCookie(newRefreshToken);
+
+                return newAccessToken;
+            }
+            catch
+            {
+                await _unitOfWork.RollBackAsync();
+                throw;
+            }
+            finally
+            {
+                await _unitOfWork.CloseConnectionAsync();
+            }
+            
        public async Task<string> RefreshToken(string refreshToken)
        {
            await _unitOfWork.OpenConnectionAsync();
@@ -127,6 +177,7 @@ namespace StoreManager.Services
            {
                await _unitOfWork.CloseConnectionAsync();
            }
+
         }
 
         public TokenResponse GenerateTokenAsync(Account account)
