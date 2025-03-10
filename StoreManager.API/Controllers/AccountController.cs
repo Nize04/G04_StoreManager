@@ -69,7 +69,7 @@ namespace StoreManager.API.Controllers
             {
                 return NotFound("Account not found.");
             }
-            return Ok(_mapper.Map<LoginModel>(account));
+            return Ok(new {account.Email});
         }
 
         [HttpPost("uploadImage")]
