@@ -70,11 +70,8 @@ namespace StoreManager.API.Controllers
             }
 
             var roleModels = _mapper.Map<IEnumerable<RoleModel>>(await _roleService.GetRolesByAccountIdAsync(accountId));
-            AccountModel model = new AccountModel()
-            {
-                Email = account.Email,
-                Roles = roleModels
-            };
+            var model = _mapper.Map<AccountModel>(account);
+            model.Roles = roleModels;
 
             return Ok(model);
         }
