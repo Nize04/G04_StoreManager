@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using StoreManager.DTO;
 using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Repositories;
 using StoreManager.Facade.Interfaces.Services;
+using StoreManager.Facade.Interfaces.Utilities;
 using StoreManager.Models;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -16,6 +19,8 @@ namespace StoreManager.Services
     public class TokenService : ITokenService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserRequestHelper _userRequestHelper;
+        private readonly ILogger<TokenService> _logger;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly string _issuer;
@@ -25,9 +30,15 @@ namespace StoreManager.Services
         private DateTime AccessTokenExpieresTime => DateTime.UtcNow.AddMinutes(30);
         private DateTime RefreshTokenExpieresTime => DateTime.UtcNow.AddDays(30);
 
-        public TokenService(IUnitOfWork unitOfWork, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
+        public TokenService(IUnitOfWork unitOfWork,
+            IUserRequestHelper userRequestHelper,
+            ILogger<TokenService> logger,
+            IConfiguration configuration,
+            IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _userRequestHelper = userRequestHelper ?? throw new ArgumentNullException(nameof(userRequestHelper));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
 
@@ -75,22 +86,47 @@ namespace StoreManager.Services
             }
         }
 
-        public async Task<string> RefreshAccessToken(string refreshToken)
+        public async Task<string> RefreshToken(string refreshToken)
         {
             await _unitOfWork.OpenConnectionAsync();
-
             await _unitOfWork.BeginTransactionAsync();
 
             try
             {
                 var token = await _unitOfWork.TokenRepository.GetByRefreshToken(refreshToken);
-                if (token == null || token.RevokedAt >= DateTime.UtcNow || token.RefreshTokenExpiresAt <= DateTime.UtcNow)
+                if (token == null)
                 {
-                    throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+                    _logger.LogWarning("🔑 Invalid refresh token used.");
+                    throw new UnauthorizedAccessException("Invalid refresh token.");
+                }
+
+                if (token.RevokedAt != null)
+                {
+                    _logger.LogWarning("⚠️ Refresh token has already been revoked.");
+                    throw new UnauthorizedAccessException("Refresh token has been revoked.");
+                }
+
+                if (token.RefreshTokenExpiresAt <= DateTime.UtcNow)
+                {
+                    _logger.LogWarning("⚠️ Refresh token has expired.");
+                    throw new UnauthorizedAccessException("Refresh token has expired.");
                 }
 
                 var account = await _unitOfWork.AccountRepository.GetByIdAsync(token.AccountId);
-                if (account == null) throw new UnauthorizedAccessException("Account not found.");
+                if (account == null)
+                {
+                    _logger.LogWarning("❌ Account associated with refresh token not found.");
+                    throw new UnauthorizedAccessException("Account not found.");
+                }
+
+                var ipAddress = _userRequestHelper.GetUserIpAddress();
+                var deviceInfo = _userRequestHelper.GetDeviceDetails();
+
+                if (token.IpAddress != ipAddress)
+                {
+                    _logger.LogWarning("🚨 Suspicious activity detected: Refresh token used from a new IP address. Old: {OldIP}, New: {NewIP}", token.IpAddress, ipAddress);
+                    throw new SecurityException("Suspicious activity detected. Refresh token used from a new IP address.");
+                }
 
                 token.RevokedAt = DateTime.UtcNow;
                 await _unitOfWork.TokenRepository.UpdateAsync(token);
@@ -105,79 +141,33 @@ namespace StoreManager.Services
                     RefreshToken = newRefreshToken,
                     AccessTokenExpiresAt = AccessTokenExpieresTime,
                     RefreshTokenExpiresAt = RefreshTokenExpieresTime,
-                    DeviceInfo = UserRequestHelper.GetDeviceDetails()
+                    DeviceInfo = deviceInfo,
+                    IpAddress = ipAddress,
+                    CreateDate = DateTime.UtcNow,
+                    IsActive = true
                 };
 
                 await _unitOfWork.TokenRepository.InsertAsync(newToken);
-                await _unitOfWork.CommitAsync();
 
                 SetJwtCookie(newAccessToken);
                 SetRefreshTokenCookie(newRefreshToken);
 
+                await _unitOfWork.CommitAsync();
+
+                _logger.LogInformation("✅ Refresh token successfully processed for AccountId: {AccountId}, IP: {IpAddress}, Device: {DeviceInfo}", account.Id, ipAddress, deviceInfo);
+
                 return newAccessToken;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "❌ Error during refresh token process.");
                 await _unitOfWork.RollBackAsync();
-                throw;
+                throw new UnauthorizedAccessException("An error occurred while refreshing the token.");
             }
             finally
             {
                 await _unitOfWork.CloseConnectionAsync();
             }
-            
-       public async Task<string> RefreshToken(string refreshToken)
-       {
-           await _unitOfWork.OpenConnectionAsync();
-
-           await _unitOfWork.BeginTransactionAsync();
-
-           try
-           {
-               var token = await _unitOfWork.TokenRepository.GetByRefreshToken(refreshToken);
-               if (token == null || token.RevokedAt >= DateTime.UtcNow || token.RefreshTokenExpiresAt <= DateTime.UtcNow)
-               {
-                   throw new UnauthorizedAccessException("Invalid or expired refresh token.");
-               }
-
-               var account = await _unitOfWork.AccountRepository.GetByIdAsync(token.AccountId);
-               if (account == null) throw new UnauthorizedAccessException("Account not found.");
-
-               token.RevokedAt = DateTime.UtcNow;
-               await _unitOfWork.TokenRepository.UpdateAsync(token);
-
-               var newAccessToken = CreateJwtToken(account);
-               var newRefreshToken = GenerateRefreshToken();
-
-               var newToken = new Token
-               {
-                   AccountId = account.Id,
-                   AccessTokenHash = newAccessToken.HashToken(),
-                   RefreshToken = newRefreshToken,
-                   AccessTokenExpiresAt = AccessTokenExpieresTime,
-                   RefreshTokenExpiresAt = RefreshTokenExpieresTime,
-                   DeviceInfo = UserRequestHelper.GetDeviceDetails()
-               };
-
-               await _unitOfWork.TokenRepository.InsertAsync(newToken);
-
-               SetJwtCookie(newAccessToken);
-               SetRefreshTokenCookie(newRefreshToken);
-               
-               await _unitOfWork.CommitAsync();
-
-               return newAccessToken;
-           }
-           catch
-           {
-               await _unitOfWork.RollBackAsync();
-               throw;
-           }
-           finally
-           {
-               await _unitOfWork.CloseConnectionAsync();
-           }
-
         }
 
         public TokenResponse GenerateTokenAsync(Account account)
