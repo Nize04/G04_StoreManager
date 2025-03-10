@@ -60,17 +60,24 @@ namespace StoreManager.API.Controllers
             }
         }
 
-        [HttpGet("GetAccountById")]
-        [AuthorizeJwt("Admin")]
-        public async Task<IActionResult> GetAccountById(int accountId)
-        {
-            var account = await _accountQueryService.GetAccountByIdAsync(accountId);
-            if (account == null)
-            {
-                return NotFound("Account not found.");
-            }
-            return Ok(new {account.Email});
-        }
+       [HttpGet("GetAccountById")]
+       [AuthorizeJwt("Admin")]
+       public async Task<IActionResult> GetAccountById(int accountId)
+       {
+           var account = await _accountQueryService.GetAccountByIdAsync(accountId);
+           if (account == null)
+           {
+               return NotFound("Account not found.");
+           }
+
+           var roleModels = _mapper.Map<IEnumerable<RoleModel>>(await _roleService.GetRolesByAccountIdAsync(accountId));
+           AccountModel model = new AccountModel()
+           {
+               Email = account.Email,
+              Roles = roleModels
+           };
+           return Ok(model);
+       }
 
         [HttpPost("uploadImage")]
         [AuthorizeJwt]
