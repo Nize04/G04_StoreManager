@@ -18,7 +18,7 @@ Handles account registration, login, and updates.
 #### Methods
 
 - **RegisterAsync**: Registers a new account.
-- **ProcessLoginAsync**: Processes the login for an account.
+- **ProcessLoginAsync**: Processes the login for an account (Authenticate).
 - **AuthorizeAccountAsync**: Authorizes an account after successful login or 2FA verification.
 - **UpdateAccount**: Updates account information.
 
