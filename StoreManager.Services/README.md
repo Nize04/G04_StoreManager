@@ -110,63 +110,72 @@ public async Task<object> RegisterAsync(Account account)
 public async Task AuthorizeAccountAsync(Account account)
 {
 
-    if (account == null)
-    {
+     // Ensure the account parameter is not null.
+     if (account == null)
+     {
         throw new ArgumentNullException(nameof(account), "Account cannot be null.");
-    }
+     }
+            
+     // Retrieve the user's IP address and device information.
+     string ipAddress = _userRequestHelper.GetUserIpAddress()!;
+     string deviceInfo = _userRequestHelper.GetDeviceDetails();
 
-    string ipAddress = _userRequestHelper.GetUserIpAddress()!;
-    string deviceInfo = _userRequestHelper.GetDeviceDetails();
-
-    try
-    {
-        var clientInfo = _userRequestHelper.GetClientInfoFromDeviceInfo(deviceInfo);
-
-        if (SecurityHelper.IsKnownBot(clientInfo))
+     try
         {
-            _logger.LogWarning("⚠️ Bot detected! Blocking authorization attempt. IP: {IpAddress}, Device Info: {DeviceInfo}", ipAddress, deviceInfo);
-            throw new SecurityException("Authorization blocked due to bot activity.");
-        }
+            // Extract client information from the device details.
+            var clientInfo = _userRequestHelper.GetClientInfoFromDeviceInfo(deviceInfo);
 
-        if (SecurityHelper.IsSuspiciousIp(ipAddress))
-        {
-            _logger.LogWarning("⚠️ Suspicious IP detected! Additional verification needed. IP: {IpAddress}", ipAddress);
-            throw new SecurityException("Authorization blocked due to suspicious IP address activity.");
-        }
+            // Check if the request is from a known bot.
+            if (SecurityHelper.IsKnownBot(clientInfo))
+            {
+                _logger.LogWarning("⚠️ Bot detected! Blocking authorization attempt. IP: {IpAddress}, Device Info: {DeviceInfo}", ipAddress, deviceInfo);
+                 throw new SecurityException("Authorization blocked due to bot activity.");
+            }
 
-        var tokenResponse = _tokenService.GenerateTokenAsync(account);
+            // Check if the IP address is suspicious (e.g., flagged as malicious or unusual).
+            if (SecurityHelper.IsSuspiciousIp(ipAddress))
+            {
+                 _logger.LogWarning("⚠️ Suspicious IP detected! Additional verification needed. IP: {IpAddress}", ipAddress);
+                 throw new SecurityException("Authorization blocked due to suspicious IP address activity.");
+             }
 
-        if (tokenResponse == null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
-        {
-            _logger.LogError("❌ Failed to generate token for account {UserId}, IP: {IpAddress}", account.Id, ipAddress);
-            throw new InvalidOperationException("Failed to generate authentication token.");
-        }
+            // Generate an authentication token for the user account.
+            var tokenResponse = _tokenService.GenerateTokenAsync(account);
 
-        await _tokenService.InsertAsync(new Token
-        {
-            AccountId = tokenResponse.AccountId,
-            AccessTokenHash = tokenResponse.AccessToken.HashToken(),
-            RefreshToken = tokenResponse.RefreshToken,
-            AccessTokenExpiresAt = tokenResponse.AccessTokenExpiresAt,
-            RefreshTokenExpiresAt = tokenResponse.RefreshTokenExpiresAt,
-            IpAddress = ipAddress,
-            DeviceInfo = deviceInfo,
-            CreateDate = DateTime.UtcNow
-        });
+            // Check if the token generation failed or the token is invalid.
+            if (tokenResponse == null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
+            {
+                _logger.LogError("❌ Failed to generate token for account {UserId}, IP: {IpAddress}", account.Id, ipAddress);
+                throw new InvalidOperationException("Failed to generate authentication token.");
+            }
 
-        _logger.LogInformation("✅ Account successfully authorized. UserId: {UserId}, IP: {IpAddress}, Device Info: {DeviceInfo}",
-            account.Id, ipAddress, deviceInfo);
-    }
-    catch (SecurityException secEx)
-    {
-        _logger.LogError(secEx, "❌ Security issue during authorization: {Message}", secEx.Message);
-        throw;
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "❌ Error during authorization process for UserId: {UserId}", account.Id);
-        throw new InvalidOperationException("An error occurred while authorizing the account. Please try again.");
-    }
+            // Store the generated token in the database, including relevant metadata like IP address and device info.
+            await _tokenService.InsertAsync(new Token
+            {
+                AccountId = tokenResponse.AccountId,
+                AccessTokenHash = tokenResponse.AccessToken.HashToken(),
+                RefreshToken = tokenResponse.RefreshToken,
+                AccessTokenExpiresAt = tokenResponse.AccessTokenExpiresAt,
+                RefreshTokenExpiresAt = tokenResponse.RefreshTokenExpiresAt,
+                IpAddress = ipAddress,
+                DeviceInfo = deviceInfo,
+                CreateDate = DateTime.UtcNow
+            });
+
+            // Log the successful authorization.
+            _logger.LogInformation("✅ Account successfully authorized. UserId: {UserId}, IP: {IpAddress}, Device Info: {DeviceInfo}",
+                account.Id, ipAddress, deviceInfo);
+            }
+            catch (SecurityException secEx)
+            {
+                _logger.LogError(secEx, "❌ Security issue during authorization: {Message}", secEx.Message);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error during authorization process for UserId: {UserId}", account.Id);
+                throw new InvalidOperationException("An error occurred while authorizing the account. Please try again.");
+            }
 }
 
 ### AccountQueryService
