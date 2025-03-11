@@ -22,8 +22,6 @@ Handles account registration, login, and updates.
 - **AuthorizeAccountAsync**: Authorizes an account after successful login or 2FA verification.
 - **UpdateAccount**: Updates account information.
 
-- #### Example Usage
-
 ---------
 ##### RegisterAsync
 
