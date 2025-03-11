@@ -29,6 +29,7 @@ Handles account registration, login, and updates.
 
 public async Task<object> RegisterAsync(Account account)
 {
+
     _logger.LogInformation("Registration Start EmployeeId: {EmployeeId}", account.Id);
 
     await _unitOfWork.OpenConnectionAsync();
@@ -50,6 +51,7 @@ public async Task<object> RegisterAsync(Account account)
 ##### ProcessLoginAsync
  public async Task<LoginResult> ProcessLoginAsync(string email, string password, string clientKey)
  {
+ 
      var account = await _unitOfWork.AccountRepository.GetByEmailAsync(email);
      if (account == null)
      {
@@ -88,6 +90,7 @@ public async Task<object> RegisterAsync(Account account)
 
 public async Task AuthorizeAccountAsync(Account account)
 {
+
     if (account == null)
     {
         throw new ArgumentNullException(nameof(account), "Account cannot be null.");
