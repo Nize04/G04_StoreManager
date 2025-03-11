@@ -57,36 +57,53 @@ namespace StoreManager.Services
 
         public async Task<LoginResult> ProcessLoginAsync(string email, string password, string clientKey)
         {
+            // Attempt to retrieve the account associated with the provided email.
             var account = await _unitOfWork.AccountRepository.GetByEmailAsync(email);
-            if (account == null)
-            {
+
+            // If no account is found with the provided email, return an invalid credentials response.
+             if (account == null)
+             {
                 _logger.LogWarning("Login failed for Email: {Email}. Account not found.", email);
                 return new LoginResult { Status = LoginStatus.InvalidCredentials };
-            }
+             }
 
-            if (!PasswordHelper.ValidatePassword(password, account.Password, account.Salt))
-            {
-                _logger.LogWarning("Login failed for Email: {Email}. Incorrect password.", email);
-                return new LoginResult { Status = LoginStatus.InvalidCredentials };
-            }
-
+            // Check if the user has been locked out due to too many failed login attempts.
             if (_loginAttemptTracker.IsLoginLockedOut(clientKey))
             {
+                // If locked out, return a LockedOut status.
                 return new LoginResult { Status = LoginStatus.LockedOut };
             }
 
-            if (account.Requires2FA)
+            // Validate the entered password against the stored password and salt.
+            if (!PasswordHelper.ValidatePassword(password, account.Password, account.Salt))
             {
-                if (!await Send2FACodeAsync(email))
-                {
-                    _logger.LogError("Failed to send 2FA code for Email: {Email}", account.Email);
-                    return new LoginResult { Status = LoginStatus.Failed2FASending };
-                }
-
-                return new LoginResult { Status = LoginStatus.Requires2FA, Account = account };
+                // If the password is incorrect, log the failed login attempt and register a failed attempt.
+                _logger.LogWarning("Login failed for Email: {Email}. Incorrect password.", email);
+                _loginAttemptTracker.RegisterLoginFailedAttempt(clientKey);
+        
+                // Return an invalid credentials response.
+                return new LoginResult { Status = LoginStatus.InvalidCredentials };
             }
 
+            // If the account requires two-factor authentication (2FA), initiate the 2FA process.
+            if (account.Requires2FA)
+            {
+                // Attempt to send the 2FA code to the user's email.
+                 if (!await Send2FACodeAsync(email))
+                {
+                     // If sending the 2FA code fails, log the error and return a failure status.
+                     _logger.LogError("Failed to send 2FA code for Email: {Email}", account.Email);
+                     return new LoginResult { Status = LoginStatus.Failed2FASending };
+                }
+
+                // If 2FA is required, return a Requires2FA status along with the account details.
+                 return new LoginResult { Status = LoginStatus.Requires2FA, Account = account };
+            }
+
+            // If login is successful and no 2FA is required, reset any failed login attempts for the client.
             _loginAttemptTracker.ResetLoginAttempts(clientKey);
+
+            // Return a Success status along with the authenticated account.
             return new LoginResult { Status = LoginStatus.Success, Account = account };
         }
 
