@@ -42,6 +42,14 @@ Handles sending and verifying 2FA codes.
 - **Revoke Token**: `TokenService.RevokeTokenAsync`
 - **Refresh Token**: `TokenService.RefreshToken`
 
+### Azure Blob Storage
+
+The `AzureBlobStorageService` provides methods for storing and retrieving files using Azure Blob Storage.
+
+#### Configuration
+
+Update the `appsettings.json` file with your Azure Storage settings:
+
 ### Two-Factor Authentication
 
 - **Send 2FA Code**: `TwoFactorService.Send2FACodeAsync`
