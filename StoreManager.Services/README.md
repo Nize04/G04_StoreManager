@@ -27,6 +27,7 @@ Handles account registration, login, and updates.
 ---------
 ##### RegisterAsync
 
+
 public async Task<object> RegisterAsync(Account account)
 {
 
@@ -47,6 +48,7 @@ public async Task<object> RegisterAsync(Account account)
         await _unitOfWork.CloseConnectionAsync();
     }
 }
+
 ---------
 ##### ProcessLoginAsync
  public async Task<LoginResult> ProcessLoginAsync(string email, string password, string clientKey)
