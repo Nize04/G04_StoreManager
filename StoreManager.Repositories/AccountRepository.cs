@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using StoreManager.DTO;
 using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Repositories;
@@ -34,7 +34,7 @@ namespace StoreManager.Repositories
 
             return accounts.FirstOrDefault();
         }
-        protected override string[] UnwantedPropertiesForInsert => new[] { "CreateDate", "UpdateDate", "IsActive", "Requires2FA" ,"Salt"};
-        protected override string[] UnwantedPropertiesForUpdate => new[] { "CreateDate", "UpdateDate", "IsActive", "Salt" };
+        protected override string[] UnwantedPropertiesForInsert => new[] { "CreateDate", "UpdateDate", "IsActive", "Requires2FA"};
+        protected override string[] UnwantedPropertiesForUpdate => new[] { "CreateDate", "UpdateDate", "IsActive"};
     }
 }
