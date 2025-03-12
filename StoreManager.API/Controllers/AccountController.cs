@@ -2,9 +2,9 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using MyAttributes;
 using StoreManager.DTO;
-using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
+using System.Security.Claims;
 
 namespace StoreManager.API.Controllers
 {
@@ -63,41 +63,70 @@ namespace StoreManager.API.Controllers
         [AuthorizeJwt("Admin")]
         public async Task<IActionResult> GetAccountById(int accountId)
         {
-            var account = await _accountQueryService.GetAccountByIdAsync(accountId);
-            if (account == null)
+            try
             {
-                return NotFound("Account not found.");
+                var account = await _accountQueryService.GetAccountByIdAsync(accountId);
+                if (account == null)
+                {
+                    _logger.LogWarning("⚠️ Account not found for AccountId: {AccountId}", accountId);
+                    return NotFound("Account not found.");
+                }
+
+                var roleModels = _mapper.Map<IEnumerable<RoleModel>>(await _roleService.GetRolesByAccountIdAsync(accountId));
+                var model = _mapper.Map<AccountModel>(account);
+                model.Roles = roleModels;
+
+                _logger.LogInformation("✅ Successfully retrieved account details for AccountId: {AccountId}", accountId);
+                return Ok(model);
             }
-
-            var roleModels = _mapper.Map<IEnumerable<RoleModel>>(await _roleService.GetRolesByAccountIdAsync(accountId));
-            var model = _mapper.Map<AccountModel>(account);
-            model.Roles = roleModels;
-
-            return Ok(model);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error retrieving account for AccountId: {AccountId}", accountId);
+                return StatusCode(500, "An error occurred while retrieving the account.");
+            }
         }
 
         [HttpPost("set-2fa")]
         [AuthorizeJwt]
         public async Task<IActionResult> Set2FA(string password)
         {
-            string email = GetSessionEmail();
-            var account = await _accountQueryService.GetAccountByEmailAsync(email);
-
-            if (account!.Requires2FA)
+            try
             {
-                return BadRequest("This account already has 2FA enabled.");
-            }
+                int accountId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                await _accountCommandService.EnableTwoFactorAuthAsync(accountId, password);
 
-            if (!PasswordHelper.ValidatePassword(password, account.Password, account.Salt))
+                return Ok("2FA has been successfully enabled.");
+            }
+            catch (Exception ex)
             {
-                return Unauthorized("Invalid password.");
+                _logger.LogError(ex, "❌ Error enabling 2FA for AccountId: {AccountId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                return StatusCode(500, "An error occurred while enabling 2FA.");
             }
+        }
 
-            account.Requires2FA = true;
-            await _accountCommandService.UpdateAccount(account);
+        [HttpPost("ChangePassword")]
+        [AuthorizeJwt]
+        public async Task<IActionResult> PasswordChange(string oldPassword, string newPassword)
+        {
+            try
+            {
+                int accountId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-            _logger.LogInformation("2FA successfully enabled for Email: {Email}", email);
-            return Ok("2FA has been successfully enabled.");
+                await _accountCommandService.ChangePasswordAsync(accountId, oldPassword, newPassword);
+
+                _logger.LogInformation("✅ Password successfully changed for AccountId: {AccountId}", accountId);
+                return Ok("Password changed successfully.");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("⚠️ Unauthorized password change attempt for AccountId: {AccountId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error changing password for AccountId: {AccountId}", User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                return StatusCode(500, "An error occurred while changing the password.");
+            }
         }
 
         private string GetSessionEmail()
