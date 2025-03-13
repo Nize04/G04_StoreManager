@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
-using StoreManager.Facade.Interfaces.Services;
 
 namespace StoreManager.Services
 {
@@ -20,7 +19,6 @@ namespace StoreManager.Services
         {
             _logger.LogInformation("Attempting to retrieve SupplierTransaction with ID: {SupplierTransactionId}", id);
 
-            await _unitOfWork.OpenConnectionAsync();
             try
             {
                 var transaction = await _unitOfWork.SupplierTransactionRepository.GetByIdAsync(id);
@@ -36,18 +34,12 @@ namespace StoreManager.Services
                 _logger.LogError(ex, "Error occurred while fetching SupplierTransaction with ID {TransactionId}", id);
                 throw;
             }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-                _logger.LogInformation("Connection closed for fetching SupplierTransaction with ID: {TransactionId}", id);
-            }
         }
 
         public async Task<IEnumerable<SupplierTransactionDetail>?> GetTransactionDetailsAsync(int supplierTransactionId)
         {
             _logger.LogInformation("Fetching details for SupplierTransactionId: {TransactionId}", supplierTransactionId);
 
-            await _unitOfWork.OpenConnectionAsync();
             try
             {
                 IEnumerable<SupplierTransactionDetail>? transactionDetails = await _unitOfWork.SupplierTransactionDetailRepository.GetAsync(od => od.SupplierTransactionId == supplierTransactionId);
@@ -62,11 +54,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "Error occurred while fetching details for SupplierTransactionId: {TransactionId}", supplierTransactionId);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-                _logger.LogInformation("Connection closed for fetching details of SupplierTransactionId: {TransactionId}", supplierTransactionId);
             }
         }
     }
