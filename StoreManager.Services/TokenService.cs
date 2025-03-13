@@ -49,40 +49,57 @@ namespace StoreManager.Services
 
         public async Task<int> InsertAsync(Token token)
         {
-            await _unitOfWork.OpenConnectionAsync();
             try
             {
-                return (int)await _unitOfWork.TokenRepository.InsertAsync(token);
+                _logger.LogInformation("🔹 Inserting new token for AccountId: {AccountId}", token.AccountId);
+                int tokenId = (int)await _unitOfWork.TokenRepository.InsertAsync(token);
+                _logger.LogInformation("✅ Token inserted successfully. TokenId: {TokenId}, AccountId: {AccountId}", tokenId, token.AccountId);
+                return tokenId;
             }
-            finally
+            catch (Exception ex)
             {
-                await _unitOfWork.CloseConnectionAsync();
+                _logger.LogError(ex, "❌ Error inserting token for AccountId: {AccountId}", token.AccountId);
+                throw new InvalidOperationException("An error occurred while inserting the token.", ex);
             }
         }
 
         public async Task<bool> IsTokenValidAsync(string tokenString)
         {
-            await _unitOfWork.OpenConnectionAsync();
             try
             {
-                return await _unitOfWork.TokenRepository.IsTokenValidAsync(tokenString);
+                _logger.LogInformation("🔍 Validating token...");
+                bool isValid = await _unitOfWork.TokenRepository.IsTokenValidAsync(tokenString);
+
+                if (isValid)
+                {
+                    _logger.LogInformation("✅ Token is valid.");
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ Token is invalid or expired.");
+                }
+
+                return isValid;
             }
-            finally
+            catch (Exception ex)
             {
-                await _unitOfWork.CloseConnectionAsync();
+                _logger.LogError(ex, "❌ Error validating token.");
+                throw new InvalidOperationException("An error occurred while validating the token.", ex);
             }
         }
 
         public async Task RevokeTokenAsync(string tokenString)
         {
-            await _unitOfWork.OpenConnectionAsync();
             try
             {
+                _logger.LogInformation("🚫 Revoking token...");
                 await _unitOfWork.TokenRepository.RevokeTokenAsync(tokenString);
+                _logger.LogInformation("✅ Token revoked successfully.");
             }
-            finally
+            catch (Exception ex)
             {
-                await _unitOfWork.CloseConnectionAsync();
+                _logger.LogError(ex, "❌ Error revoking token.");
+                throw new InvalidOperationException("An error occurred while revoking the token.", ex);
             }
         }
 
