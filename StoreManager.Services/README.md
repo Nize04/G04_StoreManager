@@ -29,22 +29,29 @@ Handles account registration, login, and updates.
 public async Task<object> RegisterAsync(Account account)
 {
 
-    _logger.LogInformation("Registration Start EmployeeId: {EmployeeId}", account.Id);
+    
+       _logger.LogInformation("Registration Start EmployeeId: {EmployeeId}", account.Id);
 
-    await _unitOfWork.OpenConnectionAsync();
-    try
-    {
-        return await _unitOfWork.AccountRepository.InsertAsync(account);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Registration failed EmployeeId: {EmployeeId}", account.Id);
-        throw;
-    }
-    finally
-    {
-        await _unitOfWork.CloseConnectionAsync();
-    }
+     try
+     {
+         if (!PasswordHelper.CheckPasswordRequirements(account.Password))
+         {
+             _logger.LogError("❌ Password validation failed. Password does not meet security requirements.");
+             throw new SecurityException("Password does not meet security requirements.");
+         }
+
+         var (hash, salt) = PasswordHelper.HashPassword(account.Password);
+
+         account.Password = hash;
+         account.Salt = salt;
+         return await _unitOfWork.AccountRepository.InsertAsync(account);
+     }
+     catch (Exception ex)
+     {
+         _logger.LogError(ex, "Registration failed EmployeeId: {EmployeeId}", account.Id);
+         throw;
+     }
+ 
 }
 
 ---------
