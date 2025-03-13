@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using StoreManager.DTO;
 using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Repositories;
@@ -39,7 +39,6 @@ namespace StoreManager.Services
         {
             _logger.LogInformation("Registration Start EmployeeId: {EmployeeId}", account.Id);
 
-            await _unitOfWork.OpenConnectionAsync();
             try
             {
                 if (!PasswordHelper.CheckPasswordRequirements(account.Password))
@@ -59,18 +58,14 @@ namespace StoreManager.Services
                 _logger.LogError(ex, "Registration failed EmployeeId: {EmployeeId}", account.Id);
                 throw;
             }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-            }
         }
 
         public async Task EnableTwoFactorAuthAsync(int accountId, string password)
         {
             try
             {
-                await _unitOfWork.OpenConnectionAsync();
                 var account = await _unitOfWork.AccountRepository.GetByIdAsync(accountId);
+
                 if (account == null)
                 {
                     _logger.LogWarning("⚠️ Attempt to enable 2FA for non-existent account. AccountId: {AccountId}", accountId);
@@ -98,10 +93,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "❌ Error enabling 2FA for AccountId: {AccountId}", accountId);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
 
@@ -246,8 +237,6 @@ namespace StoreManager.Services
 
             try
             {
-                await _unitOfWork.OpenConnectionAsync();
-
                 var account = await _unitOfWork.AccountRepository.GetByIdAsync(accountId);
                 if (account == null)
                 {
@@ -284,9 +273,10 @@ namespace StoreManager.Services
                 _logger.LogInformation("✅ Password changed successfully. AccountId: {AccountId}", accountId);
                 return true;
             }
-            finally
+            catch (Exception ex)
             {
-                await _unitOfWork.CloseConnectionAsync();
+                _logger.LogError(ex, "❌ Error while changing password process for AccountId: {AccountId}", accountId);
+                throw new InvalidOperationException("An error occurred while authorizing the account. Please try again.");
             }
         }
 
@@ -294,7 +284,6 @@ namespace StoreManager.Services
         {
             _logger.LogInformation("Updating Start EmployeeId: {EmployeeId}", account.Id);
 
-            await _unitOfWork.OpenConnectionAsync();
             try
             {
                 await _unitOfWork.AccountRepository.UpdateAsync(account);
@@ -303,10 +292,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "Updating failed EmployeeId: {EmployeeId}", account.Id);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
     }
