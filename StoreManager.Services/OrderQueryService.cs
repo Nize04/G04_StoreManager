@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
 
@@ -18,7 +18,7 @@ namespace StoreManager.Services
         public async Task<Order?> GetOrderByIdAsync(int id)
         {
             _logger.LogInformation("Starting GetOrderByIdAsync for OrderId {OrderId}", id);
-            await _unitOfWork.OpenConnectionAsync();
+
             try
             {
                 var order = await _unitOfWork.OrderRepository.GetByIdAsync(id);
@@ -30,16 +30,12 @@ namespace StoreManager.Services
                 _logger.LogError(ex, "Error occurred while retrieving Order with OrderId {OrderId}", id);
                 throw;
             }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-            }
         }
 
         public async Task<OrderDetail?> GetOrderDetailAsync(int orderId, int productId)
         {
             _logger.LogInformation("Starting GetOrderDetailAsync for OrderId {OrderId} and ProductId {ProductId}", orderId, productId);
-            await _unitOfWork.OpenConnectionAsync();
+
             try
             {
                 var orderDetail = await _unitOfWork.OrderDetailRepository.GetByIdAsync(orderId, productId);
@@ -50,10 +46,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "Error occurred while retrieving OrderDetail for OrderId {OrderId} and ProductId {ProductId}", orderId, productId);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
 
