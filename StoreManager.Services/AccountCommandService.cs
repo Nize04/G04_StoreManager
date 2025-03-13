@@ -147,6 +147,7 @@ namespace StoreManager.Services
             // Return a Success status along with the authenticated account.
             return new LoginResult { Status = LoginStatus.Success, Account = account };
         }
+        
         public async Task AuthorizeAccountAsync(Account account)
         {
             // Ensure the account parameter is not null.
