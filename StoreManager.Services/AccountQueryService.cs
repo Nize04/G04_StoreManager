@@ -21,8 +21,6 @@ namespace StoreManager.Services
             {
                 _logger.LogInformation("Attempting to retrieve account with ID: {AccountId}", id);
 
-                await _unitOfWork.OpenConnectionAsync();
-
                 Account? account = await _unitOfWork.AccountRepository.GetByIdAsync(id);
 
                 if (account == null)
@@ -41,10 +39,6 @@ namespace StoreManager.Services
                 _logger.LogError(ex, "An error occurred while retrieving account for ID: {AccountId}", id);
                 throw;
             }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-            }
         }
 
         public async Task<Account> GetAccountByEmailAsync(string email)
@@ -53,7 +47,6 @@ namespace StoreManager.Services
             {
                 _logger.LogInformation("Attempting to retrieve account for Email: {Email}", email);
 
-                await _unitOfWork.OpenConnectionAsync();
                 Account? account = await _unitOfWork.AccountRepository.GetByEmailAsync(email);
                 if (account != null)
                 {
@@ -67,10 +60,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "An error occurred while retrieving account for Email: {Email}", email);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
     }
