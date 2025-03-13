@@ -1,47 +1,44 @@
 using Microsoft.Extensions.Logging;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
-using StoreManager.Facade.Interfaces.Services;
 
 namespace StoreManager.Services
 {
-    public class EmployeeQueryService : IEmployeeQueryService
+    public class CategoryQueryService : ICategoryQueryService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ILogger<EmployeeQueryService> _logger;
+        private readonly ILogger<CategoryQueryService> _logger;
 
-        public EmployeeQueryService(IUnitOfWork unitOfWork, ILogger<EmployeeQueryService> logger)
+        public CategoryQueryService(IUnitOfWork unitOfWork, ILogger<CategoryQueryService> logger)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<Employee?> GetEmployeeByIdAsync(int id)
+        public async Task<Category?> GetByNameAsync(string name)
         {
-            _logger.LogInformation("Attempting to retrieve employee with ID: {EmployeeId}", id);
+            _logger.LogInformation("Retrieving category by name: {CategoryName}", name);
 
-            await _unitOfWork.OpenConnectionAsync();
             try
             {
-                var employee = await _unitOfWork.EmployeeRepository.GetByIdAsync(id);
+                IEnumerable<Category> categories = await _unitOfWork.CategoryRepository.GetAsync(c => c.Name == name);
+                Category? category = categories.FirstOrDefault();
 
-                if (employee == null)
+                if (category == null)
                 {
-                    _logger.LogWarning("No employee found with ID: {EmployeeId}", id);
-                    return null;
+                    _logger.LogWarning("No category found with name: {CategoryName}", name);
+                }
+                else
+                {
+                    _logger.LogInformation("Category retrieved successfully with name: {CategoryName}", name);
                 }
 
-                _logger.LogInformation("Retrieved Employee with ID: {EmployeeId}", id);
-                return employee;
+                return category;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while retrieving EmployeeId: {EmployeeId}", id);
+                _logger.LogError(ex, "An error occurred while retrieving category with name: {CategoryName}", name);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
     }
