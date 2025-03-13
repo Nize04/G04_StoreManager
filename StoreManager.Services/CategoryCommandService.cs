@@ -19,8 +19,6 @@ namespace StoreManager.Services
         {
             _logger.LogInformation("Adding category with name: {CategoryName}", category.Name);
 
-            await _unitOfWork.OpenConnectionAsync();
-
             try
             {
                 int categoryId = (int)await _unitOfWork.CategoryRepository.InsertAsync(category);
@@ -31,10 +29,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "An error occurred while adding category with name: {CategoryName}", category.Name);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
     }
