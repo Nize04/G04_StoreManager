@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
-using StoreManager.Facade.Interfaces.Services;
 
 namespace StoreManager.Services
 {
@@ -19,8 +18,6 @@ namespace StoreManager.Services
         public async Task<Supplier?> GetSupplierById(int id)
         {
             _logger.LogInformation("Retrieving supplier by ID: {SupplierId}", id);
-
-            await _unitOfWork.OpenConnectionAsync();
 
             try
             {
@@ -42,17 +39,11 @@ namespace StoreManager.Services
                 _logger.LogError(ex, "An error occurred while retrieving supplier with ID: {SupplierId}", id);
                 throw;
             }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-            }
         }
 
         public async Task<IEnumerable<Supplier>> GetSuppliersByCountryAsync(string country)
         {
             _logger.LogInformation("Retrieving suppliers from country: {Country}", country);
-
-            await _unitOfWork.OpenConnectionAsync();
 
             try
             {
@@ -73,10 +64,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "An error occurred while retrieving suppliers from country: {Country}", country);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
     }
