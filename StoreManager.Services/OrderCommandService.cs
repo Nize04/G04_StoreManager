@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
 
@@ -57,7 +57,7 @@ namespace StoreManager.Services
         public async Task UpdateOrderAsync(Order order)
         {
             _logger.LogInformation("Starting UpdateOrderAsync for OrderId {OrderId}", order.Id);
-            await _unitOfWork.OpenConnectionAsync();
+
             try
             {
                 await _unitOfWork.OrderRepository.UpdateAsync(order);
@@ -68,16 +68,12 @@ namespace StoreManager.Services
                 _logger.LogError(ex, "Error occurred while updating Order with OrderId {OrderId}", order.Id);
                 throw;
             }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-            }
         }
 
         public async Task DeleteOrderAsync(int orderId)
         {
             _logger.LogInformation("Starting DeleteOrderAsync for OrderId {OrderId}", orderId);
-            await _unitOfWork.OpenConnectionAsync();
+
             try
             {
                 await _unitOfWork.OrderRepository.DeleteAsync(orderId);
@@ -87,10 +83,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "Error occurred while deleting Order with OrderId {OrderId}", orderId);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
 
