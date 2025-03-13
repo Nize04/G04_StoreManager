@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
 using StoreManager.Facade.Interfaces.Services;
@@ -25,7 +25,6 @@ namespace StoreManager.Services
             {
                 _logger.LogInformation("Adding a new role: {RoleName}", role.RoleName);
 
-                await _unitOfWork.OpenConnectionAsync();
                 int roleId = (int)await _unitOfWork.RoleRepository.InsertAsync(role);
                 _logger.LogInformation("Role added successfully with ID: {RoleId}", roleId);
 
@@ -35,10 +34,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "An error occurred while adding the role: {RoleName}", role.RoleName);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
 
@@ -51,8 +46,6 @@ namespace StoreManager.Services
             {
                 _logger.LogInformation("Assigning RoleId: {RoleId} to AccountId: {AccountId}", accountRole.RoleId, accountRole.AccountId);
 
-                await _unitOfWork.OpenConnectionAsync();
-
                 await _unitOfWork.AccountRoleRepository.InsertAsync(accountRole);
                 _logger.LogInformation("RoleId: {RoleId} successfully assigned to AccountId: {AccountId}.", accountRole.RoleId, accountRole.AccountId);
             }
@@ -60,10 +53,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "An error occurred while assigning RoleId: {RoleId} to AccountId: {AccountId}.", accountRole.RoleId, accountRole.AccountId);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
 
@@ -73,7 +62,6 @@ namespace StoreManager.Services
             {
                 _logger.LogInformation("Retrieving roles for AccountId: {AccountId}", accountId);
 
-                await _unitOfWork.OpenConnectionAsync();
                 var roles = await _unitOfWork.AccountRoleRepository.GetRolesByAccountId(accountId);
 
                 if (!roles.Any())
@@ -92,15 +80,6 @@ namespace StoreManager.Services
                 _logger.LogError(ex, "An error occurred while retrieving roles for AccountId: {AccountId}", accountId);
                 throw;
             }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
-            }
-        }
-
-        public Task RemoveRoleFromAccountAsync(int accountId, int roleId)
-        {
-            throw new NotImplementedException();
         }
     }
 }
