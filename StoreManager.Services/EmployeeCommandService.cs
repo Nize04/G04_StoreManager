@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using StoreManager.DTO;
 using StoreManager.Facade.Interfaces.Repositories;
-using StoreManager.Facade.Interfaces.Services;
 
 namespace StoreManager.Services
 {
@@ -20,7 +19,6 @@ namespace StoreManager.Services
         {
             _logger.LogInformation("adding employee in db: {@Employee}", employee);
 
-            await _unitOfWork.OpenConnectionAsync();
             try
             {
                 int employeeId = (int)await _unitOfWork.EmployeeRepository.InsertAsync(employee);
@@ -32,10 +30,6 @@ namespace StoreManager.Services
             {
                 _logger.LogError(ex, "Error while adding employee {@Employee}", employee);
                 throw;
-            }
-            finally
-            {
-                await _unitOfWork.CloseConnectionAsync();
             }
         }
     }
