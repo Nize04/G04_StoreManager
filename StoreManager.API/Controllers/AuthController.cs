@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MyAttributes;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Models;
@@ -54,6 +54,9 @@ namespace StoreManager.API.Controllers
                     case LoginStatus.Requires2FA:
                         _sessionService.CustomSession(new Dictionary<string, object> { { "Email", result.Account.Email } });
                         return BadRequest(new { message = "Please enter the 2FA code sent to your email." });
+
+                    case LoginStatus.Failed2FASending:
+                        return StatusCode(429, new { message = "Failed 2FA Sending" });
 
                     case LoginStatus.LockedOut:
                         return StatusCode(429, new { message = "Too many failed login attempts. Please try again later." });
