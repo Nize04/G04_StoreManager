@@ -8,12 +8,7 @@ order processing, and more. The project is built using ASP.NET Core and follows 
 - [Features](#features)
 - [Technologies](#technologies)
 - [Getting Started](#getting-started)
-- [Configuration](#configuration)
-- [Project Structure](#project-structure)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
-
+- 
 ## Features
 
 - User authentication and authorization with JWT tokens
