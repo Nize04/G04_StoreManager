@@ -29,57 +29,57 @@ namespace StoreManager.API.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-    [HttpPost]
-    [Route("login")]
-       public async Task<IActionResult> Login([FromBody] LoginModel model)
-           {
-           if (model == null || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
-           {
-               _logger.LogWarning("Login attempt failed. Invalid model received.");
-               return BadRequest(new { message = "Invalid login credentials." });
-           }
-
-           var clientKey = $"{Request.HttpContext.Connection.RemoteIpAddress}:{model.Email}";
-
-           try
-           {
-               var result = await _accountCommandService.ProcessLoginAsync(model.Email, model.Password, clientKey);
-
-               switch (result.Status)
+         [HttpPost]
+         [Route("login")]
+         public async Task<IActionResult> Login([FromBody] LoginModel model)
+         {
+               if (model == null || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
                {
-                   case LoginStatus.Success:
-                       await _accountCommandService.AuthorizeAccountAsync(result.Account);
-                       _logger.LogInformation("✅ Login successful for Email: {Email}", model.Email);
-                       return Ok(new { message = "Login Successful" });
-
-                   case LoginStatus.Requires2FA:
-                       _sessionService.CustomSession(new Dictionary<string, object> { { "Email", result.Account.Email } });
-                       _logger.LogWarning("⚠️ 2FA required for Email: {Email}", model.Email);
-                       return BadRequest(new { message = "2FA verification required. Please enter the code sent to your email." });
-
-                   case LoginStatus.LockedOut:
-                       _logger.LogWarning("🚫 Account locked out due to too many failed attempts. Email: {Email}", model.Email);
-                       return StatusCode(429, new { message = "Too many failed login attempts. Please try again later." });
-
-                   case LoginStatus.InvalidCredentials:
-                       _logger.LogWarning("❌ Invalid credentials for Email: {Email}", model.Email);
-                       return Unauthorized(new { message = "Invalid email or password." });
-
-                   case LoginStatus.Failed2FASending:
-                       _logger.LogError("❌ Failed to send 2FA code for Email: {Email}", model.Email);
-                       return StatusCode(500, new { message = "Error sending 2FA code. Please try again." });
-
-                   default:
-                       _logger.LogWarning("⚠️ Unknown login status for Email: {Email}", model.Email);
-                       return Unauthorized(new { message = "Invalid login attempt." });
+                   _logger.LogWarning("Login attempt failed. Invalid model received.");
+                   return BadRequest(new { message = "Invalid login credentials." });
                }
-           }
-           catch (Exception ex)
-           {
-               _logger.LogError(ex, "An error occurred during login for Email: {Email}", model.Email);
-               return StatusCode(500, new { message = "An error occurred while processing your request." });
-           }
-       }
+
+               var clientKey = $"{Request.HttpContext.Connection.RemoteIpAddress}:{model.Email}";
+
+               try
+               {
+                   var result = await _accountCommandService.ProcessLoginAsync(model.Email, model.Password, clientKey);
+
+                   switch (result.Status)
+                   {
+                       case LoginStatus.Success:
+                           await _accountCommandService.AuthorizeAccountAsync(result.Account);
+                           _logger.LogInformation("✅ Login successful for Email: {Email}", model.Email);
+                           return Ok(new { message = "Login Successful" });
+
+                       case LoginStatus.Requires2FA:
+                           _sessionService.CustomSession(new Dictionary<string, object> { { "Email", result.Account.Email } });
+                           _logger.LogWarning("⚠️ 2FA required for Email: {Email}", model.Email);
+                           return BadRequest(new { message = "2FA verification required. Please enter the code sent to your email." });
+
+                       case LoginStatus.LockedOut:
+                           _logger.LogWarning("🚫 Account locked out due to too many failed attempts. Email: {Email}", model.Email);
+                           return StatusCode(429, new { message = "Too many failed login attempts. Please try again later." });
+
+                       case LoginStatus.InvalidCredentials:
+                           _logger.LogWarning("❌ Invalid credentials for Email: {Email}", model.Email);
+                           return Unauthorized(new { message = "Invalid email or password." });
+
+                       case LoginStatus.Failed2FASending:
+                           _logger.LogError("❌ Failed to send 2FA code for Email: {Email}", model.Email);
+                           return StatusCode(500, new { message = "Error sending 2FA code. Please try again." });
+
+                       default:
+                           _logger.LogWarning("⚠️ Unknown login status for Email: {Email}", model.Email);
+                           return Unauthorized(new { message = "Invalid login attempt." });
+                   }
+               }
+               catch (Exception ex)
+               {
+                   _logger.LogError(ex, "An error occurred during login for Email: {Email}", model.Email);
+                   return StatusCode(500, new { message = "An error occurred while processing your request." });
+               }
+         }
 
         [HttpPost]
         [Route("verify-2fa")]
