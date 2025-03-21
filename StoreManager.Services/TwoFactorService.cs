@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using StoreManager.Facade.Interfaces.Services;
 using StoreManager.Facade.Interfaces.Trackers;
 using StoreManager.Models;
+using System.Security.Cryptography;
 
 public class TwoFactorAuthService : ITwoFactorAuthService
 {
@@ -25,46 +26,55 @@ public class TwoFactorAuthService : ITwoFactorAuthService
     public async Task<bool> Send2FACodeAsync(string email)
     {
         var twoFACode = Generate2FACode();
+        var cacheKey = $"2fa-code-{twoFACode}";
 
-        var cacheKey = $"2fa-{email}";
-        _cache.Set(cacheKey, twoFACode, TimeSpan.FromMinutes(5));
+        _cache.Set(cacheKey, email, TimeSpan.FromMinutes(5));
 
         var subject = "Your 2FA Code";
         var body = $"Your 2FA code is: {twoFACode}";
 
         bool emailSent = await _emailSenderService.SendEmailAsync(email, subject, body);
+
+        if (emailSent)
+        {
+            _logger.LogInformation("✅ 2FA code sent to {Email}.", email);
+        }
+        else
+        {
+            _logger.LogError("❌ Failed to send 2FA code to {Email}.", email);
+        }
+
         return emailSent;
     }
 
-    public TwoFAResult Verify2FACode(string email, string code)
+    public (string?, TwoFAResult) Verify2FACode(string code)
     {
-        var cacheKey = $"2fa-{email}";
+        var cacheKey = $"2fa-code-{code}";
 
         if (_tracker.Is2FAVerificationLockedOut(cacheKey))
         {
-            _logger.LogWarning("2FA verification locked out for Email: {Email}", email);
-            return TwoFAResult.LockedOut;
+            _logger.LogWarning("🚫 2FA verification locked out for attempted code: {Code}", code);
+            return (null, TwoFAResult.LockedOut);
         }
 
-        if (_cache.TryGetValue(cacheKey, out string storedCode))
+        if (_cache.TryGetValue(cacheKey, out string email))
         {
-            if (storedCode == code)
-            {
-                _cache.Remove(cacheKey);
-                _logger.LogInformation("Succesfuly verify code {code}", code);
-                return TwoFAResult.Success;
-            }
+            _cache.Remove(cacheKey);
+            _logger.LogInformation("✅ 2FA verification successful for Email: {Email}", email);
+            return (email, TwoFAResult.Success);
         }
 
-        _logger.LogInformation("Unsuccesfuly verify code {code}", code);
+        _logger.LogWarning("❌ Invalid 2FA code attempt: {Code}", code);
         _tracker.Register2FAVerificationFailedAttempt(cacheKey);
-        return TwoFAResult.InvalidCode;
+        return (email, TwoFAResult.InvalidCode);
     }
 
     private string Generate2FACode()
     {
-        var random = new Random();
-        var code = random.Next(100000, 999999).ToString();
-        return code;
+        var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[4];
+        rng.GetBytes(bytes);
+        int code = BitConverter.ToInt32(bytes, 0) % 900000 + 100000;
+        return Math.Abs(code).ToString();
     }
 }
