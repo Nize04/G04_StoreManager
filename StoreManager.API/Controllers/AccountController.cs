@@ -15,7 +15,6 @@ namespace StoreManager.API.Controllers
         private readonly IAccountCommandService _accountCommandService;
         private readonly IAccountQueryService _accountQueryService;
         private readonly IRoleService _roleService;
-        private readonly ISessionService _sessionService;
         private readonly IMapper _mapper;
         private readonly ILogger<AccountController> _logger;
 
@@ -25,13 +24,11 @@ namespace StoreManager.API.Controllers
             IAccountImageService accountImageService,
             IRoleService roleService,
             IMapper mapper,
-            ILogger<AccountController> logger,
-            ISessionService sessionService)
+            ILogger<AccountController> logger)
         {
             _accountCommandService = accountCommandService ?? throw new ArgumentNullException(nameof(accountCommandService));
             _accountQueryService = accountQueryService ?? throw new ArgumentNullException(nameof(accountQueryService));
             _roleService = roleService ?? throw new ArgumentNullException(nameof(roleService));
-            _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
