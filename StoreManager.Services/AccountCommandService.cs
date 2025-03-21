@@ -147,7 +147,7 @@ namespace StoreManager.Services
             // Return a Success status along with the authenticated account.
             return new LoginResult { Status = LoginStatus.Success, Account = account };
         }
-        
+
         public async Task AuthorizeAccountAsync(Account account)
         {
             // Ensure the account parameter is not null.
@@ -223,8 +223,8 @@ namespace StoreManager.Services
             }
         }
 
-        public TwoFAResult Verify2FACode(string email, string code) =>
-          _twoFactorAuthService.Verify2FACode(email, code);
+        public (string?,TwoFAResult) Verify2FACode(string code) =>
+          _twoFactorAuthService.Verify2FACode(code);
 
         private async Task<bool> Send2FACodeAsync(string email) =>
             await _twoFactorAuthService.Send2FACodeAsync(email);
