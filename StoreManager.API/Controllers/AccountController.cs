@@ -21,7 +21,6 @@ namespace StoreManager.API.Controllers
         public AccountController(
             IAccountCommandService accountCommandService,
             IAccountQueryService accountQueryService,
-            IAccountImageService accountImageService,
             IRoleService roleService,
             IMapper mapper,
             ILogger<AccountController> logger)
