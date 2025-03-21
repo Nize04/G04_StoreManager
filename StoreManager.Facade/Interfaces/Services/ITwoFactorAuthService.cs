@@ -1,10 +1,10 @@
-﻿using StoreManager.Models;
+using StoreManager.Models;
 
 namespace StoreManager.Facade.Interfaces.Services
 {
     public interface ITwoFactorAuthService
     {
-        TwoFAResult Verify2FACode(string email, string code);
+        (string?, TwoFAResult) Verify2FACode(string code);
         Task<bool> Send2FACodeAsync(string email);
     }
 }
