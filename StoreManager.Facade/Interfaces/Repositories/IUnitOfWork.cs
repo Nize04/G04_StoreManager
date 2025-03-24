@@ -1,4 +1,4 @@
-﻿namespace StoreManager.Facade.Interfaces.Repositories
+namespace StoreManager.Facade.Interfaces.Repositories
 {
     public interface IUnitOfWork : IDisposable
     {
@@ -16,6 +16,7 @@
         IProductQuantityRepository ProductQuantityRepository { get; }
         IRoleRepository RoleRepository { get; }
         IAccountRoleRepository AccountRoleRepository { get;}
+        IAccountVideoRepository AccountVideoRepository { get; }
         ITokenRepository TokenRepository { get; }
         Task OpenConnectionAsync();
         Task CloseConnectionAsync();
