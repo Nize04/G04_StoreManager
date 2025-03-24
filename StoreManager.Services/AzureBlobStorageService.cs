@@ -1,4 +1,4 @@
-﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
@@ -8,15 +8,15 @@ using StoreManager.Models;
 
 namespace StoreManager.Services;
 
-public class BlobStorageService : AzureStorageServiceBase, IBlobStorageService
+public class AzureBlobStorageService : AzureStorageServiceBase, IAzureBlobStorageService
 {
     private readonly BlobContainerClient _containerClient;
-    private readonly ILogger<BlobStorageService> _logger;
+    private readonly ILogger<AzureBlobStorageService> _logger;
     private readonly FileExtensionContentTypeProvider _contentTypeProvider;
+    protected long _maxFileSizeInBytes;
     private const string DefaultContentType = "application/octet-stream";
-    private const long MaxFileSizeInBytes = 15 * 1024 * 1024;
 
-    public BlobStorageService(IOptions<AzureStorageSettings> options, ILogger<BlobStorageService> logger)
+    public AzureBlobStorageService(IOptions<AzureBlobStorageSettings> options, ILogger<AzureBlobStorageService> logger)
         : base(options)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -24,7 +24,7 @@ public class BlobStorageService : AzureStorageServiceBase, IBlobStorageService
 
         var blobServiceClient = new BlobServiceClient(_storageSettings.ConnectionString);
         _containerClient = blobServiceClient.GetBlobContainerClient(_storageSettings.ContainerName);
-
+        _maxFileSizeInBytes = 15 * 1024 * 1024;
         EnsureContainerExists();
     }
 
@@ -32,7 +32,7 @@ public class BlobStorageService : AzureStorageServiceBase, IBlobStorageService
     {
         try
         {
-            if (fileStream.Length > MaxFileSizeInBytes)
+            if (fileStream.Length > _maxFileSizeInBytes)
             {
                 throw new InvalidOperationException("File size exceeds the maximum limit.");
             }
