@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Caching.Memory;
 using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Repositories;
@@ -19,8 +19,8 @@ public static class DependencyConfigurator
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         configuration.GetConnectionString("ConnectionString");
         builder.Services.AddScoped<IDbConnection>(provider => new SqlConnection(connectionString));
-        builder.Services.Configure<AzureStorageSettings>(builder.Configuration.GetSection("AzureStorageSettings"));
-
+        builder.Services.Configure<AzureBlobVideoStorageSettings>(builder.Configuration.GetSection("AzureBlobVideoStorageSettings"));
+        builder.Services.Configure<AzureBlobPhotoStorageSettings>(builder.Configuration.GetSection("AzureBlobPhotoStorageSettings"));
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
         builder.Services.AddScoped<IAccountCommandService, AccountCommandService>();
         builder.Services.AddScoped<IAccountQueryService, AccountQueryService>();
@@ -39,8 +39,11 @@ public static class DependencyConfigurator
         builder.Services.AddScoped<ITwoFactorAuthService, TwoFactorAuthService>();
         builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
-        builder.Services.AddScoped<IUserRequestHelper, UserRequestHelper>();
-        builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
+        builder.Services.AddScoped<IAzureBlobStorageService, AzureBlobStorageService>();
+        builder.Services.AddScoped<IAzureBlobVideoStorageService, AzureBlobVideoStorageService>();
+        builder.Services.AddScoped<IAzureBlobPhotoStorageService, AzureBlobPhotoStorageService>();
+        builder.Services.AddScoped<IAccountVideoService, AccountVideoService>();
+        builder.Services.AddSingleton<IUserRequestHelper, UserRequestHelper>();
         builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         builder.Services.AddSingleton<ISessionService, SessionService>();
         builder.Services.AddSingleton<ILogger<Program>, Microsoft.Extensions.Logging.Logger<Program>>();
