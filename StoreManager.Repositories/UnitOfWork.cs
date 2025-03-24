@@ -1,4 +1,4 @@
-﻿using StoreManager.Extensions;
+using StoreManager.Extensions;
 using StoreManager.Facade.Interfaces.Repositories;
 using System.Data;
 
@@ -23,6 +23,7 @@ public sealed class UnitOfWork : IUnitOfWork
     private readonly Lazy<IProductQuantityRepository> _productQuantityRepository;
     private readonly Lazy<IRoleRepository> _roleRepository;
     private readonly Lazy<IAccountRoleRepository> _accountRoleRepository;
+    private readonly Lazy<IAccountVideoRepository> _accountVideoRepository;
     private readonly Lazy<ITokenRepository> _tokenRepository;
 
     public UnitOfWork(IDbConnection connection)
@@ -43,6 +44,7 @@ public sealed class UnitOfWork : IUnitOfWork
         _productQuantityRepository = new Lazy<IProductQuantityRepository>(() => new ProductsQuantityRepository(connection, _transaction));
         _roleRepository = new Lazy<IRoleRepository>(() => new RoleRepository(connection, _transaction));
         _accountRoleRepository = new Lazy<IAccountRoleRepository>(() => new AccountRoleRepository(connection, _transaction));
+        _accountVideoRepository = new Lazy<IAccountVideoRepository>(() => new AccountVideoRepository(connection, _transaction));
         _tokenRepository = new Lazy<ITokenRepository>(() => new TokenRepository(connection, _transaction));
     }
 
@@ -75,6 +77,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAccountRoleRepository AccountRoleRepository => _accountRoleRepository.Value;
 
     public ITokenRepository TokenRepository => _tokenRepository.Value;
+
+    public IAccountVideoRepository AccountVideoRepository => _accountVideoRepository.Value;
 
     public async Task OpenConnectionAsync()
     {
