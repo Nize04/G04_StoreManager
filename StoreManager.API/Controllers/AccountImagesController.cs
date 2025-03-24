@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using MyAttributes;
 using StoreManager.DTO;
@@ -10,13 +10,13 @@ namespace StoreManager.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [AuthorizeJwt]
-    public class ImagesController : ControllerBase
+    public class AccountImagesController : ControllerBase
     {
         private readonly IAccountImageService _accountImageService;
-        private readonly ILogger<ImagesController> _logger;
+        private readonly ILogger<AccountImagesController> _logger;
 
-        public ImagesController(IAccountImageService accountImageService,
-            ILogger<ImagesController> logger)
+        public AccountImagesController(IAccountImageService accountImageService,
+            ILogger<AccountImagesController> logger)
         {
             _accountImageService = accountImageService ?? throw new ArgumentNullException(nameof(accountImageService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -85,7 +85,7 @@ namespace StoreManager.API.Controllers
                 }
 
                 _logger.LogInformation("Successfully retrieved image: {FileName} for account: {AccountId}", fileName, accountId);
-                return File(fileBytes, contentType);
+                return File(fileBytes, contentType:contentType,fileName);
             }
             catch (FileNotFoundException ex)
             {
